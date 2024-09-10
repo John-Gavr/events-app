@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Events.Infrastructure", "Ev
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Events.Application", "Events.Application\Events.Application.csproj", "{D49E77AE-E48E-4245-A66C-488F792BD005}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Events.Tests", "Events.Tests\Events.Tests.csproj", "{E06F5257-81C2-4432-B9EF-4843D1F90BCA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{D49E77AE-E48E-4245-A66C-488F792BD005}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D49E77AE-E48E-4245-A66C-488F792BD005}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D49E77AE-E48E-4245-A66C-488F792BD005}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E06F5257-81C2-4432-B9EF-4843D1F90BCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E06F5257-81C2-4432-B9EF-4843D1F90BCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E06F5257-81C2-4432-B9EF-4843D1F90BCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E06F5257-81C2-4432-B9EF-4843D1F90BCA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
