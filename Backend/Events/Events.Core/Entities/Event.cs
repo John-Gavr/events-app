@@ -10,5 +10,5 @@ public class Event
     public string Category { get; set; } = string.Empty;
     public int MaxParticipants { get; set; }
     public List<EventParticipant> Participants { get; set; } = new List<EventParticipant>();
-    public byte[]? Image { get; set; }
+    public byte[]? Image { get; set; } = null;
 }

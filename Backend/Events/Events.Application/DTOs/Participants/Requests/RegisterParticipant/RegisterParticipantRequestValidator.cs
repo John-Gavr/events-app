@@ -30,9 +30,6 @@ public class RegisterParticipantRequestValidator : AbstractValidator<RegisterPar
             .NotEmpty().WithMessage("Registration date is required.")
             .LessThanOrEqualTo(DateTime.Now).WithMessage("Registration date cannot be in the future.");
 
-        RuleFor(x => x.UserId).Must(userId => _guidValidator.IsValidGuid(userId))
-            .NotEmpty().WithMessage("UserId is required.");
-
         RuleFor(x => x.EventId)
             .GreaterThan(0).WithMessage("EventId must be greater than zero.");
 

@@ -3,10 +3,10 @@ using FluentValidation;
 
 namespace Events.Application.DTOs.Users.Requests.GetUserDataById;
 
-public class GetUserDataByIdRequestValidator : AbstractValidator<GetUserDataByIdRequest>
+public class GetUserDataByUserIdRequestValidator : AbstractValidator<GetUserDataByUserIdRequest>
 {
     private readonly IGuidValidator _guidValidator;
-    public GetUserDataByIdRequestValidator(IGuidValidator guidValidator)
+    public GetUserDataByUserIdRequestValidator(IGuidValidator guidValidator)
     {
         _guidValidator = guidValidator;
 
