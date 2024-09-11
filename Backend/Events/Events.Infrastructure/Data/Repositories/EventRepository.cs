@@ -1,7 +1,6 @@
 ﻿using Events.Core.Entities;
 using Events.Core.Entities.Exceptions;
 using Events.Core.Interfaces;
-using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Events.Infrastructure.Data.Repositories;
