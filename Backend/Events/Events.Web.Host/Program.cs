@@ -6,7 +6,7 @@ using Events.Core.Entities;
 using Events.Core.Interfaces;
 using Events.Infrastructure.Data;
 using Events.Infrastructure.Data.Repositories;
-using Events.Web.Host.Mapping;
+using Events.Application.Mapping;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation.AspNetCore;
 using FluentValidation;
