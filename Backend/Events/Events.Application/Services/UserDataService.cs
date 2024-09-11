@@ -7,7 +7,6 @@ using Events.Core.Entities;
 using Events.Core.Entities.Exceptions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Data.Entity;
 
 namespace Events.Application.Services;
 
