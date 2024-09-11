@@ -8,7 +8,7 @@ using Events.Application.DTOs.Roles.Responses;
 using Events.Application.DTOs.Users.Responses;
 using Events.Core.Entities;
 
-namespace Events.Web.Host.Mapping
+namespace Events.Application.Mapping
 {
     public class MappingProfile : Profile
     {
