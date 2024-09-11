@@ -17,19 +17,5 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
 
         base.OnModelCreating(modelBuilder);
     }
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        var entities = ChangeTracker.Entries<Event>()
-            .Where(e => e.State == EntityState.Modified)
-            .ToList();
-
-        foreach (var entity in entities)
-        {
-            var eventEntity = entity.Entity;
-            eventEntity.IsFull = eventEntity.Participants.Count >= eventEntity.MaxParticipants;
-        }
-
-        return await base.SaveChangesAsync(cancellationToken);
-    }
 }
 
