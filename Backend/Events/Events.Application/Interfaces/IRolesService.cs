@@ -6,7 +6,7 @@ namespace Events.Application.Interfaces;
 public interface IRolesService
 {
     public List<RoleResponse> GetAllRoles();
-    public Task<List<RoleResponse>> GetUsersRoleAsync(GetUserRolesRequest request);
+    public Task<List<RoleNameResponse>> GetUsersRoleAsync(GetUserRolesRequest request);
 
     public Task SetUsersRoleAsync(SetUsersRolesRequest request);
 }

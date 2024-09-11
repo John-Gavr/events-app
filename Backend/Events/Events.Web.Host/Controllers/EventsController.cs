@@ -25,7 +25,7 @@ public class EventsController : ControllerBase
 
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<EventResponse>>> GetAllEvents([FromQuery] GetAllEventsRequest request)
+    public async Task<ActionResult<IEnumerable<EventResponse>>> GetAllEventsAsync([FromQuery] GetAllEventsRequest request)
     {
         var events = await _eventService.GetAllEventsAsync(request.PageNumber, request.PageSize);
         return Ok(events);
@@ -33,7 +33,7 @@ public class EventsController : ControllerBase
 
     [HttpGet("event")]
     [Authorize]
-    public async Task<ActionResult<EventResponse>> GetEventById([FromQuery] GetEventByIdRequest request)
+    public async Task<ActionResult<EventResponse>> GetEventByIdAsync([FromQuery] GetEventByIdRequest request)
     {
         var eventDto = await _eventService.GetEventByIdAsync(request.Id);
         if (eventDto == null)
@@ -46,7 +46,7 @@ public class EventsController : ControllerBase
 
     [HttpGet("byname")]
     [Authorize]
-    public async Task<ActionResult<EventResponse>> GetEventByName([FromQuery] GetEventByNameRequest request)
+    public async Task<ActionResult<EventResponse>> GetEventByNameAsync([FromQuery] GetEventByNameRequest request)
     {
         var eventDto = await _eventService.GetEventByNameAsync(request.Name);
         if (eventDto == null)
@@ -59,15 +59,15 @@ public class EventsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> CreateEvent([FromBody] CreateEventRequest request)
+    public async Task<ActionResult> CreateEventAsync([FromBody] CreateEventRequest request)
     {
         await _eventService.AddEventAsync(request);
-        return CreatedAtAction(nameof(GetEventByName), new { name = request.Name }, request);
+        return CreatedAtAction(nameof(GetEventByNameAsync), new { name = request.Name }, request); Ok();
     }
 
     [HttpPut]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> UpdateEvent([FromQuery] int id, [FromBody] UpdateEventRequest request)
+    public async Task<ActionResult> UpdateEventAsync([FromQuery] int id, [FromBody] UpdateEventRequest request)
     {
         await _eventService.UpdateEventAsync(id, request);
         return NoContent();
@@ -75,7 +75,7 @@ public class EventsController : ControllerBase
 
     [HttpDelete]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> DeleteEvent([FromQuery] DeleteEventRequest request)
+    public async Task<ActionResult> DeleteEventAsync([FromQuery] DeleteEventRequest request)
     {
         await _eventService.DeleteEventAsync(request.Id);
         return NoContent();
@@ -83,7 +83,7 @@ public class EventsController : ControllerBase
 
     [HttpGet("bycriteria")]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<EventResponse>>> GetEventsByCriteria([FromQuery] GetEventsByCriteriaRequest request)
+    public async Task<ActionResult<IEnumerable<EventResponse>>> GetEventsByCriteriaAsync([FromQuery] GetEventsByCriteriaRequest request)
     {
         var events = await _eventService.GetEventsByCriteriaAsync(request.Date, request.Location, request.Category, request.PageNumber, request.PageSize);
         return Ok(events);
@@ -91,7 +91,7 @@ public class EventsController : ControllerBase
 
     [HttpPost("addImage")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateEventsImage([FromBody] UpdateEventImageRequest request)
+    public async Task<IActionResult> UpdateEventsImageAsync([FromBody] UpdateEventImageRequest request)
     {
         await _eventService.UpdateEventsImageAsync(request);
         return NoContent();

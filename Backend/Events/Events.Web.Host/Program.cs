@@ -10,7 +10,6 @@ using Events.Application.Mapping;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation.AspNetCore;
 using FluentValidation;
-using Events.Application.Policy.Requirements;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,15 +19,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication();
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("ParticipantPolicy", policy =>
-        policy.Requirements.Add(new IsParticipantRequirement()));
-    options.AddPolicy("CurrentUserPolicy", policy =>
-        policy.Requirements.Add(new IsCurrentUserRequirement()));
-    options.AddPolicy("CurrentUserByEmailPolicy", policy =>
-        policy.Requirements.Add(new IsCurrentUserByEmailRequirement()));
-});
+builder.Services.AddAuthorization();
 
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
         .AddRoles<ApplicationRole>()

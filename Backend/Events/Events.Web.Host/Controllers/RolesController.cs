@@ -26,7 +26,7 @@ public class RolesController : ControllerBase
 
     [HttpGet("users/user/roles")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetUserRoles([FromQuery] GetUserRolesRequest request)
+    public async Task<IActionResult> GetUserRolesAsync([FromQuery] GetUserRolesRequest request)
     {
         var roles = await _rolesService.GetUsersRoleAsync(request);
         return Ok(roles);
@@ -34,7 +34,7 @@ public class RolesController : ControllerBase
 
     [HttpPost("users/user/roles")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> SetUserRole(SetUsersRolesRequest request)
+    public async Task<IActionResult> SetUserRoleAsync(SetUsersRolesRequest request)
     {
         await _rolesService.SetUsersRoleAsync(request);
         return Ok(new { Message = "Role assigned successfully." });

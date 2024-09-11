@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Events.Application.DTOs.Users.Requests.GetUserDataByEmail;
 using Events.Application.DTOs.Users.Requests.GetUserDataById;
 using Events.Application.DTOs.Users.Responses;
 using Events.Application.Interfaces;
@@ -21,7 +20,7 @@ public class UserDataService : IUserDataService
         _mapper = mapper;
     }
 
-    public async Task<UserDataResponse> GetUserDataById(GetUserDataByIdRequest request)
+    public async Task<UserDataResponse> GetUserDataByUserIdAsync(GetUserDataByUserIdRequest request)
     {
         var user =  await _userManager.Users
             .Where(u => u.Id == request.UserId)
@@ -30,14 +29,13 @@ public class UserDataService : IUserDataService
             throw new NotFoundException(nameof(user), request.UserId);
         return _mapper.Map<UserDataResponse>(user);
     }
-
-    public async Task<UserDataResponse> GetUserDataByEmail(GetUserDataByEmailRequest request)
+    public async Task<UserDataResponse> GetUserDataAsync(string userId)
     {
-
-        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email!.Equals(request.Email));
-        if(user == null) 
-            throw new NotFoundException(nameof(user), request.Email);
-
+        var user =  await _userManager.Users
+            .Where(u => u.Id == userId)
+            .FirstOrDefaultAsync();
+        if (user == null)
+            throw new NotFoundException(nameof(user), userId);
         return _mapper.Map<UserDataResponse>(user);
     }
 }

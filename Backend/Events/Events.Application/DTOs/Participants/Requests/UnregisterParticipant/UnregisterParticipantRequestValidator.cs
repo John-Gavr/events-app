@@ -8,8 +8,5 @@ public class UnregisterParticipantRequestValidator : AbstractValidator<Unregiste
     {
         RuleFor(x => x.EventId)
                 .GreaterThan(0).WithMessage("Event Id must be greater than zero.");
-
-        RuleFor(x => x.ParticipantId)
-            .GreaterThan(0).WithMessage("Participant Id must be greater than zero.");
     }
 }

@@ -30,17 +30,19 @@ public class RolesService : IRolesService
         return rolesList;   
     }
 
-    public async Task<List<RoleResponse>> GetUsersRoleAsync(GetUserRolesRequest request)
+    public async Task<List<RoleNameResponse>> GetUsersRoleAsync(GetUserRolesRequest request)
     {
         var user = await _userManager.FindByIdAsync(request.UserId);
         if (user == null)
             throw new NotFoundException(nameof(user), request.UserId);
         
         var rolesEntity = await _userManager.GetRolesAsync(user);
-        List<RoleResponse> rolesList = [];
+        List<RoleNameResponse> rolesList = [];
         foreach (var role in rolesEntity)
         {
-            rolesList.Add(_mapper.Map<RoleResponse>(role));
+            rolesList.Add(new RoleNameResponse { 
+                RoleName = role
+            });
         }
         return rolesList;
     }

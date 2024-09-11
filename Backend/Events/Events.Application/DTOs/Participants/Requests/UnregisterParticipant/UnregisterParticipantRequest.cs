@@ -3,5 +3,4 @@
 public class UnregisterParticipantRequest
 {
     public int EventId { get; set; }
-    public int ParticipantId { get; set; }
 }

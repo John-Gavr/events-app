@@ -1,9 +1,9 @@
-﻿using Events.Application.DTOs.Users.Requests.GetUserDataByEmail;
-using Events.Application.DTOs.Users.Requests.GetUserDataById;
+﻿using Events.Application.DTOs.Users.Requests.GetUserDataById;
 using Events.Application.DTOs.Users.Responses;
 using Events.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Events.Web.Host.Controllers;
 
@@ -12,17 +12,35 @@ namespace Events.Web.Host.Controllers;
 public class UserDataController : ControllerBase
 {
     private readonly IUserDataService _userDataService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UserDataController(IUserDataService userDataService) { _userDataService = userDataService; }
+    public UserDataController(IUserDataService userDataService, IHttpContextAccessor httpContextAccessor)
+    {
+        _userDataService = userDataService; 
+        _httpContextAccessor = httpContextAccessor;
+    }
 
-    [HttpGet("byEmail")]
-    [Authorize(Policy = "CurrentUserByEmailPolicy")]
-    public async Task<UserDataResponse> GetUserDataByEmailAsync([FromQuery] GetUserDataByEmailRequest request) {
-        return await _userDataService.GetUserDataByEmail(request);
+
+    [HttpGet("Id")]
+    [Authorize]
+    public UserIdResponse GetUserId()
+    {
+        var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return new UserIdResponse
+        {
+            Id = userId!
+        };
     }
     [HttpGet("byId")]
-    [Authorize(Policy = "CurrentUserPolicy")]
-    public async Task<UserDataResponse> GetUserDataByIdAsync([FromQuery] GetUserDataByIdRequest request) {
-        return await _userDataService.GetUserDataById(request);
+    [Authorize(Roles = "Admin")]
+    public async Task<UserDataResponse> GetUserDataByUserIdAsync([FromQuery] GetUserDataByUserIdRequest request) {
+        var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return await _userDataService.GetUserDataByUserIdAsync(request);
+    }
+    [HttpGet]
+    [Authorize]
+    public async Task<UserDataResponse> GetUserDataAsync() {
+        var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return await _userDataService.GetUserDataAsync(userId);
     }
 }

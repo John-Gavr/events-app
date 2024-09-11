@@ -52,25 +52,25 @@ public class EventParticipantRepository : IEventParticipantRepository
         return new List<EventParticipant>();
     }
 
-    public async Task<EventParticipant?> GetParticipantByIdAsync(int participantId)
+    public async Task<EventParticipant?> GetParticipantByUserIdAsync(string userId)
     {
-        var participantEntity = await _context.EventParticipants.FindAsync(participantId);
+        var participantEntity = await _context.EventParticipants.FirstOrDefaultAsync(p => p.UserId.ToString().Equals(userId));
         if(participantEntity == null)
-            throw new NotFoundException(nameof(participantEntity), participantId);
+            throw new NotFoundException(nameof(participantEntity), userId);
         
         return participantEntity;
     }
 
-    public async Task UnregisterParticipantAsync(int eventId, int participantId)
+    public async Task UnregisterParticipantAsync(int eventId, string userId)
     {
         var eventEntity = await _context.Events.Include(e => e.Participants)
                                                .FirstOrDefaultAsync(e => e.Id == eventId);
         if (eventEntity == null)
             throw new NotFoundException(nameof(eventEntity), eventId);
 
-        var participantEntity = eventEntity?.Participants.FirstOrDefault(p => p.Id == participantId);
+        var participantEntity = eventEntity?.Participants.FirstOrDefault(p => p.UserId.ToString().Equals(userId));
         if (participantEntity == null)
-            throw new NotFoundException(nameof(participantEntity), participantId);
+            throw new NotFoundException(nameof(participantEntity), userId);
 
         eventEntity!.Participants.Remove(participantEntity);
         await _unitOfWork.CompleteAsync();

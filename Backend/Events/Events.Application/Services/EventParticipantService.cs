@@ -20,9 +20,10 @@ public class EventParticipantService : IEventParticipantService
         _mapper = mapper;
     }
 
-    public async Task RegisterParticipantAsync(RegisterParticipantRequest request)
+    public async Task RegisterParticipantAsync(RegisterParticipantRequest request, string userId)
     {
         var participant = _mapper.Map<EventParticipant>(request);
+        participant.UserId = Guid.Parse(userId);
         await _eventParticipantRepository.RegisterParticipantAsync(request.EventId, participant);
     }
 
@@ -32,14 +33,14 @@ public class EventParticipantService : IEventParticipantService
         return _mapper.Map<IEnumerable<EventParticipantResponse>>(participants);
     }
 
-    public async Task<EventParticipantResponse?> GetParticipantByIdAsync(GetParticipantByIdRequest request)
+    public async Task<EventParticipantResponse?> GetParticipantByUserIdAsync(GetParticipantByUserIdRequest request)
     {
-        var participant = await _eventParticipantRepository.GetParticipantByIdAsync(request.Id);
+        var participant = await _eventParticipantRepository.GetParticipantByUserIdAsync(request.UserId);
         return _mapper.Map<EventParticipantResponse>(participant);
     }
 
-    public async Task UnregisterParticipantAsync(UnregisterParticipantRequest request)
+    public async Task UnregisterParticipantAsync(UnregisterParticipantRequest request, string userId)
     {
-        await _eventParticipantRepository.UnregisterParticipantAsync(request.EventId, request.ParticipantId);
+        await _eventParticipantRepository.UnregisterParticipantAsync(request.EventId, userId);
     }
 }
