@@ -31,26 +31,18 @@ public class EventService : IEventService
     {
         var eventEntity = await _eventRepository.GetEventByIdAsync(id);
         if (eventEntity != null)
-        {
-            return _mapper.Map<EventResponse>(eventEntity);
-        }
-        else
-        {
             throw new NotFoundException(nameof(eventEntity), id);
-        }
+
+        return _mapper.Map<EventResponse>(eventEntity);
     }
 
     public async Task<EventResponse?> GetEventByNameAsync(string name)
     {
         var eventEntity = await _eventRepository.GetEventByNameAsync(name);
         if (eventEntity != null)
-        {
-            return _mapper.Map<EventResponse>(eventEntity);
-        }
-        else
-        {
             throw new NotFoundException(nameof(eventEntity), name);
-        }
+
+        return _mapper.Map<EventResponse>(eventEntity);
     }
 
     public async Task AddEventAsync(CreateEventRequest request)
@@ -59,20 +51,15 @@ public class EventService : IEventService
         
         await _eventRepository.AddEventAsync(newEvent);
     }
-    //проверить
     public async Task UpdateEventAsync(int id, UpdateEventRequest request)
     {
         var eventToUpdate = await _eventRepository.GetEventByIdAsync(id);
 
-        if (eventToUpdate != null)
-        {
-            _mapper.Map(request, eventToUpdate);
-            await _eventRepository.UpdateEventAsync(eventToUpdate);
-        }
-        else
-        {
-            throw new NotFoundException(nameof(request), id);
-        }
+        if (eventToUpdate == null)
+            throw new NotFoundException(nameof(eventToUpdate), id);
+
+        _mapper.Map(request, eventToUpdate);
+        await _eventRepository.UpdateEventAsync(eventToUpdate);
     }
 
     public async Task DeleteEventAsync(int id)
