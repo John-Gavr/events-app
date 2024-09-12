@@ -23,10 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Events.Application\Events.Application.csproj" />
     <ProjectReference Include="..\Events.Core\Events.Core.csproj" />
     <ProjectReference Include="..\Events.Infrastructure\Events.Infrastructure.csproj" />
