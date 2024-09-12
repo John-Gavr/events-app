@@ -41,15 +41,13 @@ public class EventParticipantRepository : IEventParticipantRepository
         var eventEntity = await _context.Events.Include(e => e.Participants)
                                                .FirstOrDefaultAsync(e => e.Id == eventId);
 
-        if (eventEntity != null)
-        {
-            return eventEntity.Participants
-                              .Skip((pageNumber - 1) * pageSize) 
-                              .Take(pageSize)
-                              .ToList();
-        }
+        if (eventEntity == null)
+            throw new NotFoundException(nameof(eventEntity), eventId);
 
-        return new List<EventParticipant>();
+         return eventEntity.Participants
+            .Skip((pageNumber - 1) * pageSize) 
+            .Take(pageSize)
+            .ToList();
     }
 
     public async Task<EventParticipant?> GetParticipantByUserIdAsync(string userId)
