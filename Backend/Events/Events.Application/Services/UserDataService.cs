@@ -23,8 +23,7 @@ public class UserDataService : IUserDataService
     public async Task<UserDataResponse> GetUserDataByUserIdAsync(GetUserDataByUserIdRequest request)
     {
         var user =  await _userManager.Users
-            .Where(u => u.Id == request.UserId)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(u => u.Id == request.UserId);
         if (user == null)
             throw new NotFoundException(nameof(user), request.UserId);
         return _mapper.Map<UserDataResponse>(user);
