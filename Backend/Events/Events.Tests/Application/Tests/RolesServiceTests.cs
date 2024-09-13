@@ -1,4 +1,5 @@
-﻿using Events.Application.DTOs.Roles.Requests;
+﻿using AutoMapper;
+using Events.Application.DTOs.Roles.Requests;
 using Events.Application.DTOs.Roles.Responses;
 using Events.Application.Services;
 using Events.Core.Entities;
@@ -13,11 +14,13 @@ public class RolesServiceTests : ApplicationTestBase
     private readonly RolesService _service;
     private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
     private readonly Mock<RoleManager<ApplicationRole>> _roleManagerMock;
+    private readonly Mock<IMapper> _mapperMock;
 
     public RolesServiceTests()
     {
         _userManagerMock = MockUserManager<ApplicationUser>();
         _roleManagerMock = MockRoleManager<ApplicationRole>();
+        _mapperMock = new Mock<IMapper>();
 
         _service = new RolesService(_roleManagerMock.Object, _userManagerMock.Object, _mapperMock.Object);
     }

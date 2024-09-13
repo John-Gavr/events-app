@@ -1,4 +1,5 @@
-﻿using Events.Application.DTOs.Events.Requests.CreateEvent;
+﻿using AutoMapper;
+using Events.Application.DTOs.Events.Requests.CreateEvent;
 using Events.Application.DTOs.Events.Requests.UpdateEvent;
 using Events.Application.DTOs.Events.Requests.UpdateEventsImage;
 using Events.Application.DTOs.Events.Responces;
@@ -13,10 +14,12 @@ namespace Events.Tests.Application.Services
     public class EventServiceTests : ApplicationTestBase
     {
         private readonly EventService _service;
+        protected readonly Mock<IMapper> _mapperMock;
         private readonly Mock<IEventRepository> _eventRepositoryMock;
 
         public EventServiceTests() : base()
         {
+            _mapperMock = new Mock<IMapper>();
             _eventRepositoryMock = new Mock<IEventRepository>();
             _service = new EventService(_eventRepositoryMock.Object, _mapperMock.Object);
         }

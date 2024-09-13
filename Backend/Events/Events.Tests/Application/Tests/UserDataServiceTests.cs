@@ -4,95 +4,87 @@ using Events.Application.DTOs.Users.Responses;
 using Events.Application.Services;
 using Events.Core.Entities;
 using Events.Core.Entities.Exceptions;
+using Events.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Moq;
-using Events.Tests.Application.Extensions;
 
-namespace Events.Tests.Application.Services
+namespace Events.Application.Tests.Services;
+
+public class UserDataServiceTests
 {
-    public class UserDataServiceTests : ApplicationTestBase
+    private readonly UserDataService _userDataService;
+    private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
+    private readonly IMapper _mapper;
+    private readonly List<ApplicationUser> _users;
+
+    private string User1Id = Guid.NewGuid().ToString();
+    private string User2Id = Guid.NewGuid().ToString();
+    private string NoSuchUserId = Guid.NewGuid().ToString();
+    public UserDataServiceTests()
+    { 
+        _users = new List<ApplicationUser>
+        {
+            new ApplicationUser { Id = User1Id, UserName = "testuser1" },
+            new ApplicationUser { Id = User2Id, UserName = "testuser2" }
+        };
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "TestDatabase")
+            .Options;
+
+        var context = new AppDbContext(options);
+        context.Users.AddRange(_users);
+        context.SaveChanges();
+
+        var config = new MapperConfiguration(cfg =>
+        {
+            cfg.CreateMap<ApplicationUser, UserDataResponse>();
+        });
+
+        _mapper = config.CreateMapper();
+
+        _userManagerMock = new Mock<UserManager<ApplicationUser>>(
+            new Mock<IUserStore<ApplicationUser>>().Object,
+            null!, null!, null!, null!, null!, null!, null!, null!);
+
+        _userManagerMock.Setup(um => um.Users).Returns(context.Users);
+
+        _userDataService = new UserDataService(_userManagerMock.Object, _mapper);
+    }
+
+    [Fact]
+    public async Task GetUserDataByUserIdAsync_UserExists_ShouldReturnUserDataResponse()
     {
-        private readonly UserDataService _service;
-        private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
+        var request = new GetUserDataByUserIdRequest { UserId = User1Id };
 
-        public UserDataServiceTests()
-        {
-            _userManagerMock = MockUserManager<ApplicationUser>();
-            _service = new UserDataService(_userManagerMock.Object, _mapperMock.Object);
-        }
+        var result = await _userDataService.GetUserDataByUserIdAsync(request);
 
-        [Fact]
-        public async Task GetUserDataByUserIdAsync_ShouldReturnUserData_WhenUserExists()
-        {
-            var userId = Guid.NewGuid().ToString();
-            // Arrange
-            var request = new GetUserDataByUserIdRequest { UserId =  userId };
-            var user = new ApplicationUser { Id = userId, UserName = "testUser" };
-            var userDataResponse = new UserDataResponse { UserName = "testUser" };
+        Assert.NotNull(result);
+        Assert.Equal(User1Id, result.Id);
+        Assert.Equal(User1Id, result.Id);
+    }
 
-            _userManagerMock.Setup(u => u.Users)
-                .Returns(new List<ApplicationUser> { user }.AsQueryable().BuildMockDbSet().Object);
-            _mapperMock.Setup(m => m.Map<UserDataResponse>(user)).Returns(userDataResponse);
+    [Fact]
+    public async Task GetUserDataByUserIdAsync_UserDoesNotExist_ShouldThrowNotFoundException()
+    {
+        var request = new GetUserDataByUserIdRequest { UserId = NoSuchUserId };
 
-            // Act
-            var result = await _service.GetUserDataByUserIdAsync(request);
+        await Assert.ThrowsAsync<NotFoundException>(() => _userDataService.GetUserDataByUserIdAsync(request));
+    }
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("testUser", result.UserName);
-            _userManagerMock.Verify(u => u.Users, Times.Once);
-        }
+    [Fact]
+    public async Task GetUserDataAsync_UserExists_ShouldReturnUserDataResponse()
+    {
+        var result = await _userDataService.GetUserDataAsync(User1Id);
 
-        [Fact]
-        public async Task GetUserDataByUserIdAsync_ShouldThrowNotFoundException_WhenUserDoesNotExist()
-        {
-            // Arrange
-            var request = new GetUserDataByUserIdRequest { UserId = "1" };
-            _userManagerMock.Setup(u => u.Users)
-                .Returns(new List<ApplicationUser>().AsQueryable().BuildMockDbSet().Object);
+        Assert.NotNull(result);
+        Assert.Equal(User1Id, result.Id);
+    }
 
-            // Act & Assert
-            await Assert.ThrowsAsync<NotFoundException>(() => _service.GetUserDataByUserIdAsync(request));
-        }
-
-        [Fact]
-        public async Task GetUserDataAsync_ShouldReturnUserData_WhenUserExists()
-        {
-            // Arrange
-            var userId = "1";
-            var user = new ApplicationUser { Id = "1", UserName = "testUser" };
-            var userDataResponse = new UserDataResponse { UserName = "testUser" };
-
-            _userManagerMock.Setup(u => u.Users)
-                .Returns(new List<ApplicationUser> { user }.AsQueryable().BuildMockDbSet().Object);
-            _mapperMock.Setup(m => m.Map<UserDataResponse>(user)).Returns(userDataResponse);
-
-            // Act
-            var result = await _service.GetUserDataAsync(userId);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("testUser", result.UserName);
-            _userManagerMock.Verify(u => u.Users, Times.Once);
-        }
-
-        [Fact]
-        public async Task GetUserDataAsync_ShouldThrowNotFoundException_WhenUserDoesNotExist()
-        {
-            // Arrange
-            var userId = "1";
-            _userManagerMock.Setup(u => u.Users)
-                .Returns(new List<ApplicationUser>().AsQueryable().BuildMockDbSet().Object);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<NotFoundException>(() => _service.GetUserDataAsync(userId));
-        }
-
-        // Helper method to mock UserManager
-        private static Mock<UserManager<TUser>> MockUserManager<TUser>() where TUser : class
-        {
-            var store = new Mock<IUserStore<TUser>>();
-            return new Mock<UserManager<TUser>>(store.Object, null, null, null, null, null, null, null, null);
-        }
+    [Fact]
+    public async Task GetUserDataAsync_UserDoesNotExist_ShouldThrowNotFoundException()
+    {
+        await Assert.ThrowsAsync<NotFoundException>(() => _userDataService.GetUserDataAsync(NoSuchUserId));
     }
 }
