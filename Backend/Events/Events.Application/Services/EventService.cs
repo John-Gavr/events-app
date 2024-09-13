@@ -30,7 +30,7 @@ public class EventService : IEventService
     public async Task<EventResponse?> GetEventByIdAsync(int id)
     {
         var eventEntity = await _eventRepository.GetEventByIdAsync(id);
-        if (eventEntity != null)
+        if (eventEntity == null)
             throw new NotFoundException(nameof(eventEntity), id);
 
         return _mapper.Map<EventResponse>(eventEntity);
@@ -39,7 +39,7 @@ public class EventService : IEventService
     public async Task<EventResponse?> GetEventByNameAsync(string name)
     {
         var eventEntity = await _eventRepository.GetEventByNameAsync(name);
-        if (eventEntity != null)
+        if (eventEntity == null)
             throw new NotFoundException(nameof(eventEntity), name);
 
         return _mapper.Map<EventResponse>(eventEntity);
