@@ -39,23 +39,4 @@ public static class AppDbContextFactory
         context.SaveChanges();
         return context;
     }
-
-    private static void SeedData(AppDbContext context)
-    {
-        var events = new List<Event>
-            {
-                new Event
-                {
-                    Id = 1,
-                    MaxParticipants = 5,
-                    Participants = new List<EventParticipant>
-                    {
-                        
-                    }
-                }
-            };
-
-        context.Events.AddRange(events);
-        context.SaveChanges();
-    }
 }
