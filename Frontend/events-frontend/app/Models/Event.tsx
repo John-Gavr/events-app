@@ -1,8 +1,8 @@
 interface eventObject {
-    id: string,
+    id: number,
     name: string,
     description: string,
-    eventDateTime: Date,
+    eventDateTime: string,
     location: string,
     category: string,
     currentCountOfParticipants: number,
