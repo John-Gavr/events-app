@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Input } from "antd";
 import Link from "next/link";
 import { apiFetch } from "../Services/apiClient";
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ export default function RegisterPage() {
   const [repeatPassword, setRepeatPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +31,7 @@ export default function RegisterPage() {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
+      router.push('/login');
     } catch (err) {
       setError('An error occurred during registration');
     } finally {
