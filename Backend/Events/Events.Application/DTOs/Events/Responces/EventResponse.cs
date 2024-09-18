@@ -7,7 +7,7 @@ public class EventResponse
     public DateTime EventDateTime { get; set; }
     public string Location { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public bool IsFull { get; set; } = false;
+    public int CurrentCountOfParticipants { get; set; }
     public int MaxParticipants { get; set; }
     public byte[]? Image { get; set; }
 }

@@ -16,6 +16,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddCors(
+    options =>
+    {
+        options.AddPolicy("AllowLocalhost3000", 
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000", "http://localhost:5000")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+    });
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Куки передаются только по HTTPS
+    options.Cookie.SameSite = SameSiteMode.None; // Разрешить куки для кросс-сайтовых запросов
+});
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication();
@@ -59,6 +78,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.UseDeveloperExceptionPage();
 }
+app.UseCors("AllowLocalhost3000");
+
 app.MapIdentityApi<ApplicationUser>();
 
 app.UseHttpsRedirection();

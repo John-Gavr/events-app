@@ -11,4 +11,5 @@ public class Event
     public int MaxParticipants { get; set; }
     public List<EventParticipant> Participants { get; set; } = new List<EventParticipant>();
     public byte[]? Image { get; set; } = null;
+    public int CurrentCountOfparticipants => Participants.Count;
 }
