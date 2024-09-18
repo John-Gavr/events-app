@@ -26,9 +26,5 @@ public class UpdateEventRequestValidator : AbstractValidator<UpdateEventRequest>
 
         RuleFor(x => x.MaxParticipants)
             .GreaterThan(0).WithMessage("Max participants must be greater than 0.");
-
-        RuleFor(x => x.Image)
-            .Must(image => image == null || image.Length <= 2097152)
-            .WithMessage("Image size must not exceed 2MB.");
     }
 }
