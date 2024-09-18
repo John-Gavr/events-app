@@ -35,5 +35,6 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
                .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(e => e.Image);
+
     }
 }

@@ -16,6 +16,32 @@ public class EventRepository : IEventRepository
         _unitOfWork = unitOfWork;
     }
 
+    public async Task<int> GetNumberOfAllEventsAsync()
+    {
+        return await _context.Events.CountAsync();
+    }
+    public async Task<int> GetNumberOfAllEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null)
+    {
+        var query = _context.Events.AsQueryable();
+
+        if (date.HasValue)
+        {
+            query = query.Where(e => e.EventDateTime.Date == date.Value.Date);
+        }
+
+        if (!string.IsNullOrEmpty(location))
+        {
+            query = query.Where(e => e.Location == location);
+        }
+
+        if (!string.IsNullOrEmpty(category))
+        {
+            query = query.Where(e => e.Category == category);
+        }
+
+        var result = query.Include(e => e.Participants);
+        return result.Count();
+    }
     public async Task<IEnumerable<Event>> GetAllEventsAsync(int pageNumber, int pageSize)
     {
         return await _context.Events

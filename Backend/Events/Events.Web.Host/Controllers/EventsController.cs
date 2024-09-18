@@ -25,10 +25,10 @@ public class EventsController : ControllerBase
 
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<EventResponse>>> GetAllEventsAsync([FromQuery] GetAllEventsRequest request)
+    public async Task<ActionResult<EventsResponse>> GetAllEventsAsync([FromQuery] GetAllEventsRequest request)
     {
-        var events = await _eventService.GetAllEventsAsync(request.PageNumber, request.PageSize);
-        return Ok(events);
+        var eventsResponse = await _eventService.GetAllEventsAsync(request.PageNumber, request.PageSize);
+        return Ok(eventsResponse);
     }
 
     [HttpGet("event")]
@@ -62,7 +62,7 @@ public class EventsController : ControllerBase
     public async Task<ActionResult> CreateEventAsync([FromBody] CreateEventRequest request)
     {
         await _eventService.AddEventAsync(request);
-        return CreatedAtAction(nameof(GetEventByNameAsync), new { name = request.Name }, request); Ok();
+        return Ok();
     }
 
     [HttpPut]
@@ -83,7 +83,7 @@ public class EventsController : ControllerBase
 
     [HttpGet("bycriteria")]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<EventResponse>>> GetEventsByCriteriaAsync([FromQuery] GetEventsByCriteriaRequest request)
+    public async Task<ActionResult<EventsResponse>> GetEventsByCriteriaAsync([FromQuery] GetEventsByCriteriaRequest request)
     {
         var events = await _eventService.GetEventsByCriteriaAsync(request.Date, request.Location, request.Category, request.PageNumber, request.PageSize);
         return Ok(events);

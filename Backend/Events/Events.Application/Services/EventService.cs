@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Azure;
 using Events.Application.DTOs.Events.Requests.CreateEvent;
 using Events.Application.DTOs.Events.Requests.UpdateEvent;
 using Events.Application.DTOs.Events.Requests.UpdateEventsImage;
@@ -21,10 +22,15 @@ public class EventService : IEventService
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<EventResponse>> GetAllEventsAsync(int pageNumber, int pageSize)
+    public async Task<EventsResponse> GetAllEventsAsync(int pageNumber, int pageSize)
     {
         var events = await _eventRepository.GetAllEventsAsync(pageNumber, pageSize);
-        return _mapper.Map<IEnumerable<EventResponse>>(events);
+        var totalCount = await _eventRepository.GetNumberOfAllEventsAsync();
+        return new EventsResponse()
+        {
+            Events = _mapper.Map<IEnumerable<EventResponse>>(events),
+            TotalCount = totalCount
+        };
     }
 
     public async Task<EventResponse?> GetEventByIdAsync(int id)
@@ -67,10 +73,17 @@ public class EventService : IEventService
         await _eventRepository.DeleteEventAsync(id);
     }
 
-    public async Task<IEnumerable<EventResponse>> GetEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10)
+    public async Task<EventsResponse> GetEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10)
     {
         var events = await _eventRepository.GetEventsByCriteriaAsync(date, location, category, pageNumber, pageSize);
-        return _mapper.Map<IEnumerable<EventResponse>>(events);
+        int totalCount = 0;
+        if (date == null || location == null || category == null)
+            totalCount = await _eventRepository.GetNumberOfAllEventsByCriteriaAsync(date, location, category);
+        else totalCount = await _eventRepository.GetNumberOfAllEventsAsync();
+        return new EventsResponse { 
+            Events = _mapper.Map<IEnumerable<EventResponse>>(events),
+            TotalCount = totalCount
+        };
     }
 
     public async Task UpdateEventsImageAsync(UpdateEventImageRequest request)

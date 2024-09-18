@@ -4,6 +4,8 @@ namespace Events.Core.Interfaces;
 
 public interface IEventRepository
 {
+    public Task<int> GetNumberOfAllEventsAsync();
+    public Task<int> GetNumberOfAllEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null);
     Task<IEnumerable<Event>> GetAllEventsAsync(int pageNumber, int pageSize);
     Task<Event?> GetEventByIdAsync(int id);
     Task<Event?> GetEventByNameAsync(string name);
