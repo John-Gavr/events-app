@@ -16,7 +16,8 @@ namespace Events.Application.Mapping
         {
             CreateMap<Event, EventResponse>();
             CreateMap<EventResponse, Event>();
-            CreateMap<CreateEventRequest, Event>();
+            CreateMap<CreateEventRequest, Event>()
+                .ForMember(dest => dest.Image, opt => opt.ConvertUsing(new Base64ToByteArrayConverter(), src => src.Image));          ;
             CreateMap<UpdateEventRequest, Event>();
             CreateMap<RegisterParticipantRequest, EventParticipant>();
             CreateMap<EventParticipantResponse, EventParticipant>();

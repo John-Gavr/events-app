@@ -34,7 +34,6 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
                .HasForeignKey(p => p.Id)
                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(e => e.Image);
 
     }
 }

@@ -77,7 +77,7 @@ public class EventRepository : IEventRepository
 
     public async Task DeleteEventAsync(int id)
     {
-        var eventToDelete = await _context.Events.FindAsync(id);
+        var eventToDelete = await _context.Events.FirstOrDefaultAsync(e => e.Id == id);
         if (eventToDelete != null)
         {
             _context.Events.Remove(eventToDelete);
