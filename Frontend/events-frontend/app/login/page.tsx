@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Input } from "antd";
+import { Input, Button, message } from "antd";
 import Link from "next/link";
 import { apiFetch } from "../Services/apiClient";
 import './login.css';
@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [clicked, setClicked] = useState(false);
 
   const router = useRouter();
@@ -34,9 +33,7 @@ export default function LoginPage() {
 
         if (userDataResponse.ok) {
           const userData: UserData = await userDataResponse.json();
-
           localStorage.setItem('userData', JSON.stringify(userData));
-
           router.push("/events");
         }
       } catch (err) {
@@ -50,43 +47,39 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setClicked((clicked) => !clicked);
+    setClicked(true);
 
     try {
-      if (clicked) {
-        const loginResponse = await apiFetch('/login?useCookies=true', {
-          method: 'POST',
-          body: JSON.stringify({
-            email, password, twoFactorCode: "string",
-            twoFactorRecoveryCode: "string"
-          }),
-        });
+      const loginResponse = await apiFetch('/login?useCookies=true', {
+        method: 'POST',
+        body: JSON.stringify({
+          email, password, twoFactorCode: "string",
+          twoFactorRecoveryCode: "string"
+        }),
+      });
 
-        const userDataResponse = await apiFetch('/api/UserData', {
-          method: 'GET',
-          headers: {
-            'accept': 'application/json'
-          },
-        });
+      if (!loginResponse.ok) {
+        throw new Error('Failed to log in');
+      }
 
-        if (userDataResponse.ok) {
-          const userData: UserData = await userDataResponse.json();
+      const userDataResponse = await apiFetch('/api/UserData', {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json'
+        },
+      });
 
-          localStorage.setItem('userData', JSON.stringify(userData));
-
-          router.push("/events");
-        } else {
-          setError('Failed to fetch user data');
-        }
+      if (userDataResponse.ok) {
+        const userData: UserData = await userDataResponse.json();
+        localStorage.setItem('userData', JSON.stringify(userData));
+        message.success('Login successful');
+        router.push("/events");
+      } else {
+        message.error('Failed to fetch user data');
       }
     } catch (err) {
       console.error("Error during requests:", err);
-      if (err instanceof Error) {
-        setError(err.message || 'Произошла ошибка');
-      } else {
-        setError('Произошла ошибка');
-      }
+      message.error(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -101,7 +94,7 @@ export default function LoginPage() {
           className="input"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          autoComplete="false"
+          autoComplete="off"
           required
           placeholder="Email..."
         />
@@ -110,17 +103,21 @@ export default function LoginPage() {
           className="input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          autoComplete="false"
+          autoComplete="off"
           required
           placeholder="Password..."
         />
-        <button className="button" disabled={loading}>
-          Sign in
-        </button>
-        <Link href="#">forgot password?</Link>
+        <Button
+          type="primary"
+          htmlType="submit"
+          className="button"
+          loading={loading}
+        >
+          Sign In
+        </Button>
+        <Link href="#">Forgot password?</Link>
         <p>Not a user? <Link href="/register">Sign Up</Link></p>
       </form>
-      {error && <p className="error">{error}</p>}
     </div>
   );
 }

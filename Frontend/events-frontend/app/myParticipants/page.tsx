@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from '../Services/apiClient';
-import { Pagination, Button, message } from "antd";
+import { Pagination, message } from "antd";
 import { useEffect, useState, useCallback } from "react";
 import { EventsListWithoutButtons } from '../Components/EventsListWithoutButtons';
 import './page.css';
@@ -73,9 +73,7 @@ export default function EventsPage() {
         <p>Loading...</p>
       ) : (
         <div>
-          <EventsListWithoutButtons
-            events={events}
-          />
+          <EventsListWithoutButtons events={events} />
           <Pagination
             current={currentPage}
             pageSize={pageSize}

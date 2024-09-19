@@ -93,10 +93,12 @@ const RegisterPage = () => {
           description: 'Registration successful!',
           placement: 'topRight',
         });
+        router.push('/events');
       } else {
+        const errorData = await response.json();
         notification.error({
           message: 'Error',
-          description: 'Failed to register.',
+          description: errorData.message || 'Failed to register.',
           placement: 'topRight',
         });
       }

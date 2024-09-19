@@ -1,4 +1,4 @@
-import { Input, Modal, notification } from "antd";
+import { Input, Modal } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { useEffect, useState } from "react";
 
@@ -55,7 +55,7 @@ export const CreateUpdateEvent = ({
       const reader = new FileReader();
       reader.onloadend = () => {
         if (reader.result) {
-          const base64String = (reader.result as string).split(',')[1]; 
+          const base64String = (reader.result as string).split(',')[1];
           setImage(base64String);
         }
       };
@@ -83,7 +83,7 @@ export const CreateUpdateEvent = ({
       if (values.eventDateTime) {
         const eventDate = new Date(values.eventDateTime);
         if (!isNaN(eventDate.getTime())) {
-          setDate(eventDate.toISOString().split('T')[0]); 
+          setDate(eventDate.toISOString().split('T')[0]);
           setTime(eventDate.toISOString().split('T')[1].substring(0, 5));
           setDateTime(eventDate.toISOString());
         } else {
@@ -114,27 +114,12 @@ export const CreateUpdateEvent = ({
     try {
       if (mode === Mode.Create) {
         await handleCreate(eventRequest);
-        notification.success({
-          message: 'Success',
-          description: 'Event created successfully!',
-          placement: 'topRight',
-        });
       } else {
         await handleUpdate(values.id, eventRequest);
-        notification.success({
-          message: 'Success',
-          description: 'Event updated successfully!',
-          placement: 'topRight',
-        });
       }
       handleCancel();
     } catch (err) {
       setError('An error occurred while saving the event. Please try again.');
-      notification.error({
-        message: 'Error',
-        description: 'An error occurred while saving the event. Please try again.',
-        placement: 'topRight',
-      });
     }
   };
 
@@ -166,8 +151,8 @@ export const CreateUpdateEvent = ({
         style={{ marginBottom: '16px' }}
       />
       <Input
-        value={maxParticipants}
         type="number"
+        value={maxParticipants}
         onChange={(e) => setMaxParticipants(Number(e.target.value))}
         placeholder="Max Participants"
         style={{ marginBottom: '16px' }}
