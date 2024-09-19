@@ -17,11 +17,21 @@ const EventPage = () => {
   const [loadingParticipants, setLoadingParticipants] = useState<boolean>(true);
 
   useEffect(() => {
-    if (id) {
-      fetchEventById(Number(id));
-      checkParticipantRegistration(Number(id));
+    const userData = localStorage.getItem('userData');
+    if (!userData) {
+      router.push('/login');
+      return;
     }
-  }, [id]);
+
+    const fetchEventDetails = async () => {
+      if (id) {
+        await fetchEventById(Number(id));
+        await checkParticipantRegistration(Number(id));
+      }
+    };
+
+    fetchEventDetails();
+  }, [id, router]);
 
   const fetchEventById = async (id: number) => {
     setLoading(true);
@@ -53,7 +63,6 @@ const EventPage = () => {
         });
 
         const participants = await response.json();
-
         const isUserRegistered = participants.some((participant: any) => participant.userId === userId);
         setIsRegistered(isUserRegistered);
       }
