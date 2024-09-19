@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../Services/apiClient';
-import { Image, message } from 'antd';
+import { Image, message, Modal } from 'antd';
 import './event.css';
 
 const EventPage = () => {
@@ -12,9 +12,8 @@ const EventPage = () => {
   const id = params.get('id');
   const [event, setEvent] = useState<eventObject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [loadingParticipants, setLoadingParticipants] = useState<boolean>(true);
+  const [isRegistered, setIsRegistered] = useState<boolean>(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('userData');
@@ -35,17 +34,18 @@ const EventPage = () => {
 
   const fetchEventById = async (id: number) => {
     setLoading(true);
-    setError(null);
-
     try {
-      const response = await apiFetch(`/api/Events/event?Id=${id}`, {
-        method: 'GET',
-      });
+      const response = await apiFetch(`/api/Events/event?Id=${id}`, { method: 'GET' });
 
-      const data = await response.json();
-      setEvent(data);
+      if (response.ok) {
+        const data = await response.json();
+        setEvent(data);
+      } else {
+        const error = await response.json();
+        showError('Failed to fetch event', error.message);
+      }
     } catch (err) {
-      setError('Failed to fetch event');
+      showError('Failed to fetch event', 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -58,17 +58,19 @@ const EventPage = () => {
       if (localUserData) {
         const { id: userId } = JSON.parse(localUserData);
 
-        const response = await apiFetch(`/api/EventParticipant/event/participants?EventId=${eventId}`, {
-          method: 'GET',
-        });
+        const response = await apiFetch(`/api/EventParticipant/event/participants?EventId=${eventId}`, { method: 'GET' });
 
-        const participants = await response.json();
-        const isUserRegistered = participants.some((participant: any) => participant.userId === userId);
-        setIsRegistered(isUserRegistered);
+        if (response.ok) {
+          const participants = await response.json();
+          const isUserRegistered = participants.some((participant: any) => participant.userId === userId);
+          setIsRegistered(isUserRegistered);
+        } else {
+          const error = await response.json();
+          showError('Failed to fetch participants', error.message);
+        }
       }
     } catch (err) {
-      console.error("Failed to fetch participants", err);
-      setError('Failed to fetch participants');
+      showError('Failed to fetch participants', 'An unexpected error occurred.');
     } finally {
       setLoadingParticipants(false);
     }
@@ -82,23 +84,30 @@ const EventPage = () => {
 
   const handleUnregisterClick = async () => {
     try {
-      const response = await apiFetch(`/api/EventParticipant/event/unregister?EventId=${event?.id}`, {
-        method: 'DELETE',
-      });
+      const response = await apiFetch(`/api/EventParticipant/event/unregister?EventId=${event?.id}`, { method: 'DELETE' });
 
       if (response.ok) {
         message.success('Successfully unregistered from the event');
         setIsRegistered(false);
       } else {
-        message.error('Failed to unregister');
+        const error = await response.json();
+        showError('Failed to unregister', error.message);
       }
     } catch (err) {
-      message.error('Failed to unregister');
+      showError('Failed to unregister', 'An unexpected error occurred.');
     }
   };
 
+  const showError = (title: string, description: string) => {
+    Modal.error({
+      title,
+      content: description,
+      centered: true,
+      okText: 'OK'
+    });
+  };
+
   if (loading || loadingParticipants) return <p>Loading...</p>;
-  if (error) return <p>{error}</p>;
   if (!event) return <p>Event not found</p>;
 
   const availableSpots = event.maxParticipants - event.currentCountOfParticipants;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pagination, Input, Button, DatePicker } from "antd";
+import { Pagination, Input, Button, DatePicker, Modal, message } from "antd";
 import dayjs from 'dayjs';
 import { EventList } from "../Components/EventsList";
 import { CreateUpdateEvent, Mode, eventRequest } from '../Components/CreateUpdateEvent';
@@ -67,10 +67,11 @@ export default function EventsPage() {
         setEvents(data.events);
         setTotalItems(data.totalCount);
       } else {
-        setError("Failed to fetch events");
+        const errorData = await response.json();
+        showError('Failed to fetch events', errorData.message || 'An unexpected error occurred.');
       }
     } catch (err) {
-      setError("Failed to fetch events");
+      showError('Failed to fetch events', 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -142,13 +143,15 @@ export default function EventsPage() {
         body: JSON.stringify(request),
       });
       if (response.ok) {
+        message.success('Event created successfully');
         setIsModalOpen(false);
         router.push("/events");
       } else {
-        setError("Failed to create event");
+        const errorData = await response.json();
+        showError('Failed to create event', errorData.message || 'An unexpected error occurred.');
       }
     } catch (err) {
-      setError("Failed to create event");
+      showError('Failed to create event', 'An unexpected error occurred.');
     }
   };
 
@@ -159,13 +162,15 @@ export default function EventsPage() {
         body: JSON.stringify(request),
       });
       if (response.ok) {
+        message.success('Event updated successfully');
         setIsModalOpen(false);
         fetchEvents(currentPage, pageSize);
       } else {
-        setError("Failed to update event");
+        const errorData = await response.json();
+        showError('Failed to update event', errorData.message || 'An unexpected error occurred.');
       }
     } catch (err) {
-      setError("Failed to update event");
+      showError('Failed to update event', 'An unexpected error occurred.');
     }
   };
 
@@ -175,14 +180,25 @@ export default function EventsPage() {
         method: 'DELETE',
       });
       if (response.ok) {
+        message.success('Event deleted successfully');
         setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
         setTotalItems(prevTotal => prevTotal - 1);
       } else {
-        setError("Failed to delete event");
+        const errorData = await response.json();
+        showError('Failed to delete event', errorData.message || 'An unexpected error occurred.');
       }
     } catch (err) {
-      setError("Failed to delete event");
+      showError('Failed to delete event', 'An unexpected error occurred.');
     }
+  };
+
+  const showError = (title: string, description: string) => {
+    Modal.error({
+      title,
+      content: description,
+      centered: true,
+      okText: 'OK'
+    });
   };
 
   if (!userRole) {

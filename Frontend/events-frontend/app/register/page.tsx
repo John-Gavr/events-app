@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Input } from "antd";
+import { Input, message } from "antd";
 import Link from "next/link";
 import { apiFetch } from "../Services/apiClient";
 import { useRouter } from 'next/navigation';
@@ -34,7 +34,6 @@ export default function RegisterPage() {
         if (userDataResponse.ok) {
           const userData: UserData = await userDataResponse.json();
           localStorage.setItem('userData', JSON.stringify(userData));
-
           router.push("/events");
         }
       } catch (err) {
@@ -58,12 +57,23 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      await apiFetch('/register', {
+      const response = await apiFetch('/register', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
+        headers: {
+          'Content-Type': 'application/json'
+        },
       });
-      router.push('/login');
+
+      if (response.ok) {
+        message.success('Registration successful! Redirecting to login...');
+        router.push('/login');
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'An error occurred during registration');
+      }
     } catch (err) {
+      console.error("Error during registration:", err);
       setError('An error occurred during registration');
     } finally {
       setLoading(false);
@@ -79,7 +89,7 @@ export default function RegisterPage() {
           className="input"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          autoComplete="false"
+          autoComplete="off"
           required
           placeholder="Email..."
         />
@@ -88,7 +98,7 @@ export default function RegisterPage() {
           className="input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          autoComplete="false"
+          autoComplete="off"
           required
           placeholder="Password..."
         />
@@ -97,7 +107,7 @@ export default function RegisterPage() {
           className="input"
           value={repeatPassword}
           onChange={(e) => setRepeatPassword(e.target.value)}
-          autoComplete="false"
+          autoComplete="off"
           required
           placeholder="Re-enter password..."
         />

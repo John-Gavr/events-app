@@ -1,10 +1,9 @@
 "use client";
 import { Content, Footer, Header } from "antd/es/layout/layout";
 import "./globals.css";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, message } from "antd";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { message } from 'antd';
 import { useEffect, useState } from 'react';
 
 const RootLayout = ({
@@ -16,8 +15,16 @@ const RootLayout = ({
   const [userDataExists, setUserDataExists] = useState<boolean>(false);
 
   useEffect(() => {
-    const userData = localStorage.getItem("userData");
-    setUserDataExists(!!userData);
+    const checkUserData = () => {
+      const userData = localStorage.getItem("userData");
+      setUserDataExists(!!userData);
+    };
+
+    checkUserData();
+
+    const intervalId = setInterval(checkUserData, 1000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleMenuClick = async (e: { key: string }) => {
