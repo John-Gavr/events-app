@@ -7,7 +7,13 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/events');
+    const userData = localStorage.getItem("userData");
+
+    if (!userData) {
+      router.push("/login");
+    } else {
+      router.push("/events");
+    }
   }, [router]);
 
   return null;
