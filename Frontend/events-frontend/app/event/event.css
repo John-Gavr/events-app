@@ -109,3 +109,36 @@
         font-size: 0.8em;
     }
   }
+
+.register__button {
+  background-color: rgb(22, 164, 22);
+  max-width: 200px;
+  word-break: break-all;
+}
+
+.unregister__button {
+  background-color: rgb(179, 1, 1);
+  max-width: 200px;
+  word-break: break-all;
+}
+
+  .already__participate {
+    background-color: rgb(22, 164, 22);
+    margin: 20px auto;
+    max-width: 250px;
+    word-break:normal;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 1.5em;
+  }
+
+  .no__spots {
+    background-color: rgb(179, 1, 1);
+    margin: 20px auto;
+    color: white;
+    max-width: 250px;
+    word-break:normal;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 1.5em;
+  }

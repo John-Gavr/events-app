@@ -36,7 +36,7 @@ public class EventParticipantController : ControllerBase
     }
 
     [HttpGet("event/participants")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> GetParticipantsByEventIdAsync([FromQuery] GetParticipantsByEventIdRequest request)
     {
         var participants = await _eventParticipantService.GetParticipantsByEventIdAsync(request);
