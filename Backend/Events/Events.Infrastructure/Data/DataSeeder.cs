@@ -24,7 +24,7 @@ public class DataSeeder
 
             var users = new[]
             {
-                new { UserName = "admin@gmail.com", Password = "admin123!", Role = "Admin", Email="admin@gmail.com" },
+                new { UserName = "admin@gmail.com", Password = "Admin123!", Role = "Admin", Email="admin@gmail.com" },
                 new { UserName = "user@gmail.com", Password = "User123!", Role = "User", Email="user@gmail.com"  }
             };
 
