@@ -1,12 +1,13 @@
 "use client";
-import { apiFetch } from '../Services/apiClient';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Pagination, Input, Button, DatePicker } from "antd";
-import { useEffect, useState, useCallback } from "react";
-import { EventList } from "../Components/EventsList";
 import dayjs from 'dayjs';
-import './page.css';
+import { EventList } from "../Components/EventsList";
 import { CreateUpdateEvent, Mode, eventRequest } from '../Components/CreateUpdateEvent';
-import {useRouter} from 'next/navigation';
+import { apiFetch } from '../Services/apiClient';
+import './page.css';
 
 export default function EventsPage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function EventsPage() {
   const [events, setEvents] = useState<eventObject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [userRole, setUserRole] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,15 +78,18 @@ export default function EventsPage() {
 
   useEffect(() => {
     const userData = localStorage.getItem('userData');
-    if (userData) {
-      const parsedUserData = JSON.parse(userData);
-      if (parsedUserData.roles && parsedUserData.roles.length > 0) {
-        setUserRole(parsedUserData.roles[0]); 
-      }
+    if (!userData) {
+      router.push("/login");
+      return;
+    }
+
+    const parsedUserData = JSON.parse(userData);
+    if (parsedUserData.roles && parsedUserData.roles.length > 0) {
+      setUserRole(parsedUserData.roles[0]);
     }
 
     fetchEvents(currentPage, pageSize);
-  }, [currentPage, pageSize, fetchEvents]);
+  }, [currentPage, pageSize, fetchEvents, router]);
 
   const handlePageChange = (page: number, pageSize: number) => {
     setCurrentPage(page);
@@ -180,6 +184,10 @@ export default function EventsPage() {
       setError("Failed to delete event");
     }
   };
+
+  if (!userRole) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div>

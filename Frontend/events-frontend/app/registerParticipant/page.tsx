@@ -10,8 +10,6 @@ const RegisterPage = () => {
   const params = useSearchParams();
   const eventId = params.get('id');
   const [email, setEmail] = useState<string>('');
-  const [registrationError, setRegistrationError] = useState<string | null>(null);
-  const [registrationSuccess, setRegistrationSuccess] = useState<string | null>(null);
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
 
   useEffect(() => {
@@ -29,40 +27,53 @@ const RegisterPage = () => {
     setEmail(parsedLocalUserData.email);
 
     try {
-      const response = await apiFetch('/api/UserData', {
-        method: 'GET',
-      });
+      const response = await apiFetch('/api/UserData');
       if (response.ok) {
         const serverData = await response.json();
         if (serverData.id === parsedLocalUserData.id) {
-          setIsAuthorized(true); // User is authorized
+          setIsAuthorized(true);
         } else {
-          localStorage.removeItem('userData');
-          router.push('/login');
+          handleAuthorizationError();
         }
       } else {
-        router.push('/login');
+        handleAuthorizationError();
       }
     } catch (err) {
       console.error("Authorization error:", err);
-      router.push('/login');
+      handleAuthorizationError();
     }
   };
 
-  const handleRegistrationSubmit = async (values: any) => {
-    setRegistrationError(null);
-    setRegistrationSuccess(null);
+  const handleAuthorizationError = () => {
+    localStorage.removeItem('userData');
+    router.push('/login');
+  };
 
-    if (!values.firstName || !values.lastName || !values.dateOfBirth) {
-      setRegistrationError('Please fill in all fields');
+  const handleRegistrationSubmit = async (values: any) => {
+    if (!eventId) {
+      notification.error({
+        message: 'Error',
+        description: 'Event ID is missing.',
+        placement: 'topRight',
+      });
+      return;
+    }
+
+    const { firstName, lastName, dateOfBirth } = values;
+    if (!firstName || !lastName || !dateOfBirth) {
+      notification.error({
+        message: 'Error',
+        description: 'Please fill in all fields.',
+        placement: 'topRight',
+      });
       return;
     }
 
     const requestData = {
       eventId: Number(eventId),
-      firstName: values.firstName,
-      lastName: values.lastName,
-      dateOfBirth: `${values.dateOfBirth}T00:00:00`, 
+      firstName,
+      lastName,
+      dateOfBirth: `${dateOfBirth}T00:00:00`,
       registrationDate: new Date().toISOString(),
       email,
     };
@@ -77,25 +88,23 @@ const RegisterPage = () => {
       });
 
       if (response.ok) {
-        setRegistrationSuccess('Registration successful!');
         notification.success({
           message: 'Success',
           description: 'Registration successful!',
           placement: 'topRight',
         });
       } else {
-        setRegistrationError('Failed to register');
         notification.error({
           message: 'Error',
-          description: 'Failed to register',
+          description: 'Failed to register.',
           placement: 'topRight',
         });
       }
     } catch (err) {
-      setRegistrationError('An error occurred during registration');
+      console.error('Registration error:', err);
       notification.error({
         message: 'Error',
-        description: 'An error occurred during registration',
+        description: 'An error occurred during registration.',
         placement: 'topRight',
       });
     }
@@ -105,9 +114,7 @@ const RegisterPage = () => {
     router.back();
   };
 
-  if (!isAuthorized) {
-    return <p>Loading...</p>;
-  }
+  if (!isAuthorized) return <p>Loading...</p>;
 
   return (
     <div className="registration-page">
@@ -141,8 +148,8 @@ const RegisterPage = () => {
           <Button type="primary" htmlType="submit">
             Register
           </Button>
-          <Button 
-            type="default" 
+          <Button
+            type="default"
             onClick={handleBackButtonClick}
             style={{ marginLeft: '10px' }}
           >
