@@ -1,5 +1,6 @@
 ﻿using Events.Core.Entities;
 using Events.Core.Entities.Exceptions;
+using Events.Core.Interfaces;
 using Events.Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -160,4 +161,46 @@ public class EventRepositoryTests : InfrastructureTestBase
 
         await Assert.ThrowsAsync<NotFoundException>(() => _repository.AddEventImageAsync(eventId, imageBytes));
     }
+
+    [Fact]
+    public async Task GetEventsByUserIdAsync_ReturnsEventsForGivenUserId()
+    {
+        var userId = Guid.NewGuid().ToString();
+        var participant1 = new EventParticipant { Id = 27, UserId = Guid.Parse(userId) };
+        var participant2 = new EventParticipant { Id = 28, UserId = Guid.NewGuid() };
+
+        var event1 = new Event { Id = 23, EventDateTime = DateTime.Now.AddDays(1), Participants = new List<EventParticipant> { participant1 } };
+        var event2 = new Event { Id = 24, EventDateTime = DateTime.Now.AddDays(2), Participants = new List<EventParticipant> { participant2 } };
+
+        _context.Events.AddRange(event1, event2);
+        await _context.SaveChangesAsync();
+
+        int pageNumber = 1;
+        int pageSize = 2;
+
+        var result = await _repository.GetEventsByUserIdAsync(userId, pageNumber, pageSize);
+
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Contains(result, e => e.EventDateTime == event1.EventDateTime);
+    }
+
+    [Fact]
+    public async Task GetUserEventsCountAsync_ReturnsCorrectCount()
+    {
+        var userId = Guid.NewGuid().ToString();
+        var participant1 = new EventParticipant { Id = 37, UserId = Guid.Parse(userId) };
+        var participant2 = new EventParticipant { Id = 38, UserId = Guid.NewGuid() };
+
+        var event1 = new Event { Id = 33, EventDateTime = DateTime.Now.AddDays(1), Participants = new List<EventParticipant> { participant1 } };
+        var event2 = new Event { Id = 34, EventDateTime = DateTime.Now.AddDays(2), Participants = new List<EventParticipant> { participant2 } };
+
+        _context.Events.AddRange(event1, event2);
+        await _context.SaveChangesAsync();
+
+        var count = await _repository.GetUserEventsCountAsync(userId);
+
+        Assert.Equal(1, count); 
+    }
+
 }

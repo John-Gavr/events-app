@@ -9,6 +9,7 @@ using Events.Application.DTOs.Events.Requests.GetAllEvents;
 using Events.Application.DTOs.Events.Requests.GetEventByName;
 using Events.Application.DTOs.Events.Requests.UpdateEvent;
 using Events.Application.DTOs.Events.Requests.UpdateEventsImage;
+using Events.Application.DTOs.Events.Requests.GetUsersEvents;
 
 namespace Events.Web.Host.Controllers;
 
@@ -95,5 +96,12 @@ public class EventsController : ControllerBase
     {
         await _eventService.UpdateEventsImageAsync(request);
         return NoContent();
+    }
+
+    [HttpGet("userEvents")]
+    [Authorize]
+    public async Task<EventsResponse> GetEventsByUserId([FromQuery] GetUsersEventsRequest request)
+    {
+        return await _eventService.GetEventsByUserIdAsync(request.UserId, request.PageNumber, request.PageSize);
     }
 }

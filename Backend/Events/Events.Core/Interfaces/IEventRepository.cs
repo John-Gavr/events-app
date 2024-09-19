@@ -14,4 +14,6 @@ public interface IEventRepository
     Task DeleteEventAsync(int id);
     Task<IEnumerable<Event>> GetEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10);
     public  Task AddEventImageAsync(int id, byte[] image);
+    public Task<IEnumerable<Event>> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize);
+    public Task<int> GetUserEventsCountAsync(string userId);
 }
