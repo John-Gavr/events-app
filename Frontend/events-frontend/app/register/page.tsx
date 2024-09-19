@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "antd";
 import Link from "next/link";
 import { apiFetch } from "../Services/apiClient";
 import { useRouter } from 'next/navigation';
+
+interface UserData {
+  id: string;
+  userName: string;
+  email: string;
+  roles: string[];
+}
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -13,6 +20,30 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const checkUserData = async () => {
+      try {
+        const userDataResponse = await apiFetch('/api/UserData', {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json'
+          },
+        });
+
+        if (userDataResponse.ok) {
+          const userData: UserData = await userDataResponse.json();
+          localStorage.setItem('userData', JSON.stringify(userData));
+
+          router.push("/events");
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+      }
+    };
+
+    checkUserData();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
