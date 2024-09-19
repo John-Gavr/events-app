@@ -90,4 +90,15 @@ public class EventService : IEventService
     {
         await _eventRepository.AddEventImageAsync(request.EventId, request.ImageBytes);
     }
+
+    public async Task<EventsResponse> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize)
+    {
+        var events = await _eventRepository.GetEventsByUserIdAsync(userId, pageNumber, pageSize);
+        var totalCount = await _eventRepository.GetUserEventsCountAsync(userId);
+        return new EventsResponse
+        {
+            Events = _mapper.Map<IEnumerable<EventResponse>>(events),
+            TotalCount = totalCount
+        };
+    }
 }

@@ -45,8 +45,8 @@ public class EventRepository : IEventRepository
     public async Task<IEnumerable<Event>> GetAllEventsAsync(int pageNumber, int pageSize)
     {
         return await _context.Events
-                             .Include(e => e.Participants) 
-                             .Skip((pageNumber - 1) * pageSize) 
+                             .Include(e => e.Participants)
+                             .Skip((pageNumber - 1) * pageSize)
                              .Take(pageSize)
                              .ToListAsync();
     }
@@ -66,13 +66,13 @@ public class EventRepository : IEventRepository
     public async Task AddEventAsync(Event newEvent)
     {
         await _context.Events.AddAsync(newEvent);
-        await _unitOfWork.CompleteAsync(); 
+        await _unitOfWork.CompleteAsync();
     }
 
     public async Task UpdateEventAsync(Event updatedEvent)
     {
         _context.Events.Update(updatedEvent);
-        await _unitOfWork.CompleteAsync(); 
+        await _unitOfWork.CompleteAsync();
     }
 
     public async Task DeleteEventAsync(int id)
@@ -108,9 +108,9 @@ public class EventRepository : IEventRepository
             query = query.Where(e => e.Category == category);
         }
 
-        return await query.Include(e => e.Participants) 
-                          .Skip((pageNumber - 1) * pageSize) 
-                          .Take(pageSize) 
+        return await query.Include(e => e.Participants)
+                          .Skip((pageNumber - 1) * pageSize)
+                          .Take(pageSize)
                           .ToListAsync();
     }
 
@@ -120,11 +120,28 @@ public class EventRepository : IEventRepository
         if (eventToUpdate != null)
         {
             eventToUpdate.Image = image;
-            await _unitOfWork.CompleteAsync(); 
+            await _unitOfWork.CompleteAsync();
         }
         else
         {
             throw new NotFoundException(nameof(eventToUpdate), id);
         }
+    }
+
+    public async Task<IEnumerable<Event>> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize)
+    {
+        return await _context.Events
+            .Where(e => e.Participants.Any(p => p.UserId.ToString().Equals(userId)))
+            .OrderBy(e => e.EventDateTime)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetUserEventsCountAsync(string userId)
+    {
+        return await _context.Events
+            .Where(e => e.Participants.Any(p => p.UserId.ToString().Equals(userId))).CountAsync();
+
     }
 }

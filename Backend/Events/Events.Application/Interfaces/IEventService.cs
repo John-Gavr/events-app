@@ -15,4 +15,5 @@ public interface IEventService
     Task DeleteEventAsync(int id);
     Task<EventsResponse> GetEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10);
     Task UpdateEventsImageAsync(UpdateEventImageRequest request);
+    Task<EventsResponse> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize);
 }
