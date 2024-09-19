@@ -13,8 +13,6 @@ export async function apiFetch(
     },
   });
 
-  console.log("fetch works", response);
-
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
   }
