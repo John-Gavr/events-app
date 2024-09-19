@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "antd";
 import Link from "next/link";
 import { apiFetch } from "../Services/apiClient";
@@ -22,11 +22,37 @@ export default function LoginPage() {
 
   const router = useRouter();
 
+  useEffect(() => {
+    const checkUserData = async () => {
+      try {
+        const userDataResponse = await apiFetch('/api/UserData', {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json'
+          },
+        });
+
+        if (userDataResponse.ok) {
+          const userData: UserData = await userDataResponse.json();
+
+          localStorage.setItem('userData', JSON.stringify(userData));
+
+          router.push("/events");
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+      }
+    };
+
+    checkUserData();
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setClicked(clicked => !clicked);
+    setClicked((clicked) => !clicked);
+
     try {
       if (clicked) {
         const loginResponse = await apiFetch('/login?useCookies=true', {
@@ -70,15 +96,27 @@ export default function LoginPage() {
     <div className="form__wrapper">
       <h1>Sign In</h1>
       <form className="form" onSubmit={handleSubmit}>
-        <Input type="email" className="input"
+        <Input
+          type="email"
+          className="input"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          autoComplete="false" required placeholder="Email..." />
-        <Input type="password" className="input"
+          autoComplete="false"
+          required
+          placeholder="Email..."
+        />
+        <Input
+          type="password"
+          className="input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          autoComplete="false" required placeholder="Password..." />
-        <button className="button" disabled={loading}>Sign in</button>
+          autoComplete="false"
+          required
+          placeholder="Password..."
+        />
+        <button className="button" disabled={loading}>
+          Sign in
+        </button>
         <Link href="#">forgot password?</Link>
         <p>Not a user? <Link href="/register">Sign Up</Link></p>
       </form>
