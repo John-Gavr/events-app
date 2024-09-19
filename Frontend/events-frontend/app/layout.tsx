@@ -5,7 +5,7 @@ import { Layout, Menu} from "antd";
 import Link from "next/link";
 
 const items = [
-  {key : "myParticipant", label : <Link href={"/MyPartisipants"}>MyPartisipants</Link>},
+  {key : "myParticipant", label : <Link href={"/myParticipants"}>MyPartisipants</Link>},
   {key : "Events", label : <Link href={"/events"}>Events</Link>}
 ]
 
