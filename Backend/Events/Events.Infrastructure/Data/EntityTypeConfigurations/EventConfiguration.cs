@@ -31,7 +31,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
 
         builder.HasMany(e => e.Participants)
                .WithOne()
-               .HasForeignKey(p => p.Id)
+               .HasForeignKey(p => p.EventId)
                .OnDelete(DeleteBehavior.Cascade);
 
 
