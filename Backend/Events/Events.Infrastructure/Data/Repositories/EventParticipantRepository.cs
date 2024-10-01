@@ -8,12 +8,10 @@ namespace Events.Infrastructure.Data.Repositories;
 public class EventParticipantRepository : IEventParticipantRepository
 {
     private readonly AppDbContext _context;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public EventParticipantRepository(AppDbContext context, IUnitOfWork unitOfWork)
+    public EventParticipantRepository(AppDbContext context)
     {
         _context = context;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task RegisterParticipantAsync(int eventId, EventParticipant participant)
@@ -32,7 +30,7 @@ public class EventParticipantRepository : IEventParticipantRepository
         }
 
         eventEntity.Participants.Add(participant);
-        await _unitOfWork.CompleteAsync();
+        await _context.SaveChangesAsync();
     }
 
 
@@ -71,6 +69,6 @@ public class EventParticipantRepository : IEventParticipantRepository
             throw new NotFoundException(nameof(participantEntity), userId);
 
         eventEntity!.Participants.Remove(participantEntity);
-        await _unitOfWork.CompleteAsync();
+        await _context.SaveChangesAsync();
     }
 }
