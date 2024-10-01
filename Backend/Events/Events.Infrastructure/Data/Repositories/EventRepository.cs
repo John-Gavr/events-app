@@ -22,7 +22,7 @@ public class EventRepository : IEventRepository
     }
     public async Task<int> GetNumberOfAllEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null)
     {
-        var query = _context.Events.AsQueryable();
+        var query = _context.Events.AsNoTracking().AsQueryable();
 
         if (date.HasValue)
         {
@@ -44,7 +44,7 @@ public class EventRepository : IEventRepository
     }
     public async Task<IEnumerable<Event>> GetAllEventsAsync(int pageNumber, int pageSize)
     {
-        return await _context.Events
+        return await _context.Events.AsNoTracking()
                              .Include(e => e.Participants)
                              .Skip((pageNumber - 1) * pageSize)
                              .Take(pageSize)
@@ -53,13 +53,13 @@ public class EventRepository : IEventRepository
 
     public async Task<Event?> GetEventByIdAsync(int id)
     {
-        return await _context.Events.Include(e => e.Participants)
+        return await _context.Events.AsNoTracking().Include(e => e.Participants)
                                     .FirstOrDefaultAsync(e => e.Id == id);
     }
 
     public async Task<Event?> GetEventByNameAsync(string name)
     {
-        return await _context.Events.Include(e => e.Participants)
+        return await _context.Events.AsNoTracking().Include(e => e.Participants)
                                     .FirstOrDefaultAsync(e => e.Name == name);
     }
 
@@ -91,7 +91,7 @@ public class EventRepository : IEventRepository
 
     public async Task<IEnumerable<Event>> GetEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10)
     {
-        var query = _context.Events.AsQueryable();
+        var query = _context.Events.AsNoTracking().AsQueryable();
 
         if (date.HasValue)
         {
@@ -130,7 +130,7 @@ public class EventRepository : IEventRepository
 
     public async Task<IEnumerable<Event>> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize)
     {
-        return await _context.Events
+        return await _context.Events.AsNoTracking()
             .Where(e => e.Participants.Any(p => p.UserId.ToString().Equals(userId)))
             .OrderBy(e => e.EventDateTime)
             .Skip((pageNumber - 1) * pageSize)
@@ -140,7 +140,7 @@ public class EventRepository : IEventRepository
 
     public async Task<int> GetUserEventsCountAsync(string userId)
     {
-        return await _context.Events
+        return await _context.Events.AsNoTracking()
             .Where(e => e.Participants.Any(p => p.UserId.ToString().Equals(userId))).CountAsync();
 
     }
