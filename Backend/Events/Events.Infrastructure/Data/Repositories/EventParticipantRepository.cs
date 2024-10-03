@@ -18,7 +18,7 @@ public class EventParticipantRepository : IEventParticipantRepository
 
     public async Task RegisterParticipantAsync(int eventId, EventParticipant participant)
     {
-        var eventEntity = await _context.Events.Include(e => e.Participants)
+        var eventEntity = await _context.Events.AsNoTracking().Include(e => e.Participants)
                                                .FirstOrDefaultAsync(e => e.Id == eventId);
 
         if (eventEntity == null)
@@ -38,7 +38,7 @@ public class EventParticipantRepository : IEventParticipantRepository
 
     public async Task<IEnumerable<EventParticipant>> GetParticipantsByEventIdAsync(int eventId, int pageNumber, int pageSize)
     {
-        var eventEntity = await _context.Events.Include(e => e.Participants)
+        var eventEntity = await _context.Events.AsNoTracking().Include(e => e.Participants)
                                                .FirstOrDefaultAsync(e => e.Id == eventId);
 
         if (eventEntity == null)
@@ -52,7 +52,7 @@ public class EventParticipantRepository : IEventParticipantRepository
 
     public async Task<EventParticipant?> GetParticipantByUserIdAsync(string userId)
     {
-        var participantEntity = await _context.EventParticipants.FirstOrDefaultAsync(p => p.UserId.ToString().Equals(userId));
+        var participantEntity = await _context.EventParticipants.AsNoTracking().FirstOrDefaultAsync(p => p.UserId.ToString().Equals(userId));
         if(participantEntity == null)
             throw new NotFoundException(nameof(participantEntity), userId);
         
