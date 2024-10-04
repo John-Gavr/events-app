@@ -1,5 +1,4 @@
 ﻿using Events.Core.Entities;
-using Events.Core.Entities.Exceptions;
 using Events.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,12 +7,10 @@ namespace Events.Infrastructure.Data.Repositories;
 public class EventRepository : IEventRepository
 {
     private readonly AppDbContext _context;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public EventRepository(AppDbContext context, IUnitOfWork unitOfWork)
+    public EventRepository(AppDbContext context)
     {
         _context = context;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<int> GetNumberOfAllEventsAsync()
@@ -66,13 +63,13 @@ public class EventRepository : IEventRepository
     public async Task AddEventAsync(Event newEvent)
     {
         await _context.Events.AddAsync(newEvent);
-        await _unitOfWork.CompleteAsync();
+        await _context.SaveChangesAsync();
     }
 
     public async Task UpdateEventAsync(Event updatedEvent)
     {
         _context.Events.Update(updatedEvent);
-        await _unitOfWork.CompleteAsync();
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteEventAsync(int id)
