@@ -78,15 +78,9 @@ public class EventRepository : IEventRepository
     public async Task DeleteEventAsync(int id)
     {
         var eventToDelete = await _context.Events.FirstOrDefaultAsync(e => e.Id == id);
-        if (eventToDelete != null)
-        {
-            _context.Events.Remove(eventToDelete);
-            await _unitOfWork.CompleteAsync();
-        }
-        else
-        {
-            throw new NotFoundException(nameof(eventToDelete), id);
-        }
+        
+        _context.Events.Remove(eventToDelete!);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<Event>> GetEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10)
@@ -117,15 +111,9 @@ public class EventRepository : IEventRepository
     public async Task AddEventImageAsync(int id, byte[] image)
     {
         var eventToUpdate = await _context.Events.FindAsync(id);
-        if (eventToUpdate != null)
-        {
-            eventToUpdate.Image = image;
-            await _unitOfWork.CompleteAsync();
-        }
-        else
-        {
-            throw new NotFoundException(nameof(eventToUpdate), id);
-        }
+
+        eventToUpdate!.Image = image;
+        await _context.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<Event>> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize)
@@ -142,6 +130,5 @@ public class EventRepository : IEventRepository
     {
         return await _context.Events.AsNoTracking()
             .Where(e => e.Participants.Any(p => p.UserId.ToString().Equals(userId))).CountAsync();
-
     }
 }
