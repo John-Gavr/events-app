@@ -1,5 +1,4 @@
 ﻿using Events.Core.Entities;
-using Events.Core.Entities.Exceptions;
 using Events.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,17 +18,7 @@ public class EventParticipantRepository : IEventParticipantRepository
         var eventEntity = await _context.Events.AsNoTracking().Include(e => e.Participants)
                                                .FirstOrDefaultAsync(e => e.Id == eventId);
 
-        if (eventEntity == null)
-        {
-            throw new NotFoundException(nameof(eventEntity), eventId);
-        }
-
-        if (eventEntity.Participants.Count >= eventEntity.MaxParticipants)
-        {
-            throw new InvalidOperationException("The event has reached it's maximum number of participants.");
-        }
-
-        eventEntity.Participants.Add(participant);
+        eventEntity!.Participants.Add(participant);
         await _context.SaveChangesAsync();
     }
 
@@ -39,10 +28,7 @@ public class EventParticipantRepository : IEventParticipantRepository
         var eventEntity = await _context.Events.AsNoTracking().Include(e => e.Participants)
                                                .FirstOrDefaultAsync(e => e.Id == eventId);
 
-        if (eventEntity == null)
-            throw new NotFoundException(nameof(eventEntity), eventId);
-
-         return eventEntity.Participants
+         return eventEntity!.Participants
             .Skip((pageNumber - 1) * pageSize) 
             .Take(pageSize)
             .ToList();
@@ -50,25 +36,17 @@ public class EventParticipantRepository : IEventParticipantRepository
 
     public async Task<EventParticipant?> GetParticipantByUserIdAsync(string userId)
     {
-        var participantEntity = await _context.EventParticipants.AsNoTracking().FirstOrDefaultAsync(p => p.UserId.ToString().Equals(userId));
-        if(participantEntity == null)
-            throw new NotFoundException(nameof(participantEntity), userId);
-        
-        return participantEntity;
+        return await _context.EventParticipants.FirstOrDefaultAsync(p => p.UserId.ToString().Equals(userId));
     }
 
     public async Task UnregisterParticipantAsync(int eventId, string userId)
     {
         var eventEntity = await _context.Events.Include(e => e.Participants)
                                                .FirstOrDefaultAsync(e => e.Id == eventId);
-        if (eventEntity == null)
-            throw new NotFoundException(nameof(eventEntity), eventId);
 
         var participantEntity = eventEntity?.Participants.FirstOrDefault(p => p.UserId.ToString().Equals(userId));
-        if (participantEntity == null)
-            throw new NotFoundException(nameof(participantEntity), userId);
+        eventEntity!.Participants.Remove(participantEntity!);
 
-        eventEntity!.Participants.Remove(participantEntity);
         await _context.SaveChangesAsync();
     }
 }
