@@ -15,7 +15,7 @@ public class EventParticipantRepository : IEventParticipantRepository
 
     public async Task RegisterParticipantAsync(int eventId, EventParticipant participant)
     {
-        var eventEntity = await _context.Events.AsNoTracking().Include(e => e.Participants)
+        var eventEntity = await _context.Events.Include(e => e.Participants)
                                                .FirstOrDefaultAsync(e => e.Id == eventId);
 
         eventEntity!.Participants.Add(participant);

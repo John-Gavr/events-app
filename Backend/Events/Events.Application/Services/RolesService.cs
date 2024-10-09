@@ -32,11 +32,11 @@ public class RolesService : IRolesService
 
     public async Task<List<RoleNameResponse>> GetUsersRoleAsync(GetUserRolesRequest request)
     {
-        var user = await _userManager.FindByIdAsync(request.UserId);
-        if (user == null)
-            throw new NotFoundException(nameof(user), request.UserId);
+        var userEntity = await _userManager.FindByIdAsync(request.UserId);
+        if (userEntity == null)
+            throw new NotFoundException(nameof(userEntity), request.UserId);
         
-        var rolesEntity = await _userManager.GetRolesAsync(user);
+        var rolesEntity = await _userManager.GetRolesAsync(userEntity);
         List<RoleNameResponse> rolesList = [];
         foreach (var role in rolesEntity)
         {
@@ -49,14 +49,14 @@ public class RolesService : IRolesService
 
     public async Task SetUsersRoleAsync(SetUsersRolesRequest request)
     {
-        var user = await _userManager.FindByIdAsync(request.UserId);
-        if (user == null)
-            throw new NotFoundException(nameof(user), request.UserId);
+        var userEntity = await _userManager.FindByIdAsync(request.UserId);
+        if (userEntity == null)
+            throw new NotFoundException(nameof(userEntity), request.UserId);
 
         var role = await _roleManager.FindByNameAsync(request.RoleName);
         if (role == null)
             throw new NotFoundException(nameof(role), request.RoleName);
 
-        await _userManager.AddToRoleAsync(user, request.RoleName);
+        await _userManager.AddToRoleAsync(userEntity, request.RoleName);
     }
 }
