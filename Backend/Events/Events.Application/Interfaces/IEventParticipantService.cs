@@ -8,8 +8,8 @@ namespace Events.Application.Interfaces;
 
 public interface IEventParticipantService
 {
-    Task RegisterParticipantAsync(RegisterParticipantRequest request, string userId);
-    Task<IEnumerable<EventParticipantResponse>> GetParticipantsByEventIdAsync(GetParticipantsByEventIdRequest request);
-    Task<EventParticipantResponse?> GetParticipantByUserIdAsync(GetParticipantByUserIdRequest request);
-    Task UnregisterParticipantAsync(UnregisterParticipantRequest request, string userId);
+    Task RegisterParticipantAsync(RegisterParticipantRequest request, string userId, CancellationToken cancellationToken);
+    Task<IEnumerable<EventParticipantResponse>> GetParticipantsByEventIdAsync(GetParticipantsByEventIdRequest request, CancellationToken cancellationToken);
+    Task<EventParticipantResponse?> GetParticipantByUserIdAsync(GetParticipantByUserIdRequest request, CancellationToken cancellationToken);
+    Task UnregisterParticipantAsync(UnregisterParticipantRequest request, string userId, CancellationToken cancellationToken);
 }

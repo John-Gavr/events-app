@@ -26,17 +26,17 @@ public class EventsController : ControllerBase
 
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<EventsResponse>> GetAllEventsAsync([FromQuery] GetAllEventsRequest request)
+    public async Task<ActionResult<EventsResponse>> GetAllEventsAsync([FromQuery] GetAllEventsRequest request, CancellationToken cancellationToken)
     {
-        var eventsResponse = await _eventService.GetAllEventsAsync(request.PageNumber, request.PageSize);
+        var eventsResponse = await _eventService.GetAllEventsAsync(request.PageNumber, request.PageSize, cancellationToken);
         return Ok(eventsResponse);
     }
 
     [HttpGet("event")]
     [Authorize]
-    public async Task<ActionResult<EventResponse>> GetEventByIdAsync([FromQuery] GetEventByIdRequest request)
+    public async Task<ActionResult<EventResponse>> GetEventByIdAsync([FromQuery] GetEventByIdRequest request, CancellationToken cancellationToken)
     {
-        var eventDto = await _eventService.GetEventByIdAsync(request.Id);
+        var eventDto = await _eventService.GetEventByIdAsync(request.Id, cancellationToken);
         if (eventDto == null)
         {
             return NotFound();
@@ -47,9 +47,9 @@ public class EventsController : ControllerBase
 
     [HttpGet("byname")]
     [Authorize]
-    public async Task<ActionResult<EventResponse>> GetEventByNameAsync([FromQuery] GetEventByNameRequest request)
+    public async Task<ActionResult<EventResponse>> GetEventByNameAsync([FromQuery] GetEventByNameRequest request, CancellationToken cancellationToken)
     {
-        var eventDto = await _eventService.GetEventByNameAsync(request.Name);
+        var eventDto = await _eventService.GetEventByNameAsync(request.Name, cancellationToken);
         if (eventDto == null)
         {
             return NotFound();
@@ -60,48 +60,48 @@ public class EventsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> CreateEventAsync([FromBody] CreateEventRequest request)
+    public async Task<ActionResult> CreateEventAsync([FromBody] CreateEventRequest request, CancellationToken cancellationToken)
     {
-        await _eventService.AddEventAsync(request);
+        await _eventService.AddEventAsync(request, cancellationToken);
         return Ok();
     }
 
     [HttpPut]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> UpdateEventAsync([FromQuery] int id, [FromBody] UpdateEventRequest request)
+    public async Task<ActionResult> UpdateEventAsync([FromQuery] int id, [FromBody] UpdateEventRequest request, CancellationToken cancellationToken)
     {
-        await _eventService.UpdateEventAsync(id, request);
+        await _eventService.UpdateEventAsync(id, request, cancellationToken);
         return NoContent();
     }
 
     [HttpDelete]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> DeleteEventAsync([FromQuery] DeleteEventRequest request)
+    public async Task<ActionResult> DeleteEventAsync([FromQuery] DeleteEventRequest request, CancellationToken cancellationToken)
     {
-        await _eventService.DeleteEventAsync(request.Id);
+        await _eventService.DeleteEventAsync(request.Id, cancellationToken);
         return NoContent();
     }
 
     [HttpGet("bycriteria")]
     [Authorize]
-    public async Task<ActionResult<EventsResponse>> GetEventsByCriteriaAsync([FromQuery] GetEventsByCriteriaRequest request)
+    public async Task<ActionResult<EventsResponse>> GetEventsByCriteriaAsync([FromQuery] GetEventsByCriteriaRequest request, CancellationToken cancellationToken)
     {
-        var events = await _eventService.GetEventsByCriteriaAsync(request.Date, request.Location, request.Category, request.PageNumber, request.PageSize);
+        var events = await _eventService.GetEventsByCriteriaAsync(cancellationToken, request.Date, request.Location, request.Category, request.PageNumber, request.PageSize);
         return Ok(events);
     }
 
     [HttpPost("addImage")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateEventsImageAsync([FromBody] UpdateEventImageRequest request)
+    public async Task<IActionResult> UpdateEventsImageAsync([FromBody] UpdateEventImageRequest request, CancellationToken cancellationToken)
     {
-        await _eventService.UpdateEventsImageAsync(request);
+        await _eventService.UpdateEventsImageAsync(request, cancellationToken);
         return NoContent();
     }
 
     [HttpGet("userEvents")]
     [Authorize]
-    public async Task<EventsResponse> GetEventsByUserId([FromQuery] GetUsersEventsRequest request)
+    public async Task<EventsResponse> GetEventsByUserId([FromQuery] GetUsersEventsRequest request, CancellationToken cancellationToken)
     {
-        return await _eventService.GetEventsByUserIdAsync(request.UserId, request.PageNumber, request.PageSize);
+        return await _eventService.GetEventsByUserIdAsync(request.UserId, request.PageNumber, request.PageSize, cancellationToken);
     }
 }

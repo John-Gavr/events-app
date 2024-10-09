@@ -16,10 +16,9 @@ public class UserDataController : ControllerBase
 
     public UserDataController(IUserDataService userDataService, IHttpContextAccessor httpContextAccessor)
     {
-        _userDataService = userDataService; 
+        _userDataService = userDataService;
         _httpContextAccessor = httpContextAccessor;
     }
-
 
     [HttpGet("Id")]
     [Authorize]
@@ -31,16 +30,20 @@ public class UserDataController : ControllerBase
             Id = userId!
         };
     }
+
     [HttpGet("byId")]
     [Authorize(Roles = "Admin")]
-    public async Task<UserDataResponse> GetUserDataByUserIdAsync([FromQuery] GetUserDataByUserIdRequest request) {
+    public async Task<UserDataResponse> GetUserDataByUserIdAsync([FromQuery] GetUserDataByUserIdRequest request, CancellationToken cancellationToken)
+    {
         var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _userDataService.GetUserDataByUserIdAsync(request);
+        return await _userDataService.GetUserDataByUserIdAsync(request, cancellationToken);
     }
+
     [HttpGet]
     [Authorize]
-    public async Task<UserDataResponse> GetUserDataAsync() {
+    public async Task<UserDataResponse> GetUserDataAsync(CancellationToken cancellationToken)
+    {
         var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _userDataService.GetUserDataAsync(userId);
+        return await _userDataService.GetUserDataAsync(userId, cancellationToken);
     }
 }

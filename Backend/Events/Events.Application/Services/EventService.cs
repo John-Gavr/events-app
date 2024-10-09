@@ -24,10 +24,10 @@ public class EventService : IEventService
         _userManager = userManager;
     }
 
-    public async Task<EventsResponse> GetAllEventsAsync(int pageNumber, int pageSize)
+    public async Task<EventsResponse> GetAllEventsAsync(int pageNumber, int pageSize, CancellationToken cancellationToken)
     {
-        var events = await _eventRepository.GetAllEventsAsync(pageNumber, pageSize);
-        var totalCount = await _eventRepository.GetNumberOfAllEventsAsync();
+        var events = await _eventRepository.GetAllEventsAsync(pageNumber, pageSize, cancellationToken);
+        var totalCount = await _eventRepository.GetNumberOfAllEventsAsync(cancellationToken);
         return new EventsResponse()
         {
             Events = _mapper.Map<IEnumerable<EventResponse>>(events),
@@ -35,83 +35,83 @@ public class EventService : IEventService
         };
     }
 
-    public async Task<EventResponse?> GetEventByIdAsync(int id)
+    public async Task<EventResponse?> GetEventByIdAsync(int id, CancellationToken cancellationToken)
     {
-        var eventEntity = await _eventRepository.GetEventByIdAsync(id);
+        var eventEntity = await _eventRepository.GetEventByIdAsync(id, cancellationToken);
         if (eventEntity == null)
             throw new NotFoundException(nameof(eventEntity), id);
 
         return _mapper.Map<EventResponse>(eventEntity);
     }
 
-    public async Task<EventResponse?> GetEventByNameAsync(string name)
+    public async Task<EventResponse?> GetEventByNameAsync(string name, CancellationToken cancellationToken)
     {
-        var eventEntity = await _eventRepository.GetEventByNameAsync(name);
+        var eventEntity = await _eventRepository.GetEventByNameAsync(name, cancellationToken);
         if (eventEntity == null)
             throw new NotFoundException(nameof(eventEntity), name);
 
         return _mapper.Map<EventResponse>(eventEntity);
     }
 
-    public async Task AddEventAsync(CreateEventRequest request)
+    public async Task AddEventAsync(CreateEventRequest request, CancellationToken cancellationToken)
     {
-        var eventEntity = await _eventRepository.GetEventByNameAsync(request.Name);
+        var eventEntity = await _eventRepository.GetEventByNameAsync(request.Name, cancellationToken);
         if (eventEntity != null)
             throw new EventAlredyExistException(request.Name);
 
         var newEvent = _mapper.Map<Event>(request);
-        await _eventRepository.AddEventAsync(newEvent);
+        await _eventRepository.AddEventAsync(newEvent, cancellationToken);
     }
-    public async Task UpdateEventAsync(int id, UpdateEventRequest request)
+
+    public async Task UpdateEventAsync(int id, UpdateEventRequest request, CancellationToken cancellationToken)
     {
-        var eventToUpdate = await _eventRepository.GetEventByIdAsync(id);
+        var eventToUpdate = await _eventRepository.GetEventByIdAsync(id, cancellationToken);
 
         if (eventToUpdate == null)
             throw new NotFoundException(nameof(eventToUpdate), id);
 
         _mapper.Map(request, eventToUpdate);
-        await _eventRepository.UpdateEventAsync(eventToUpdate);
+        await _eventRepository.UpdateEventAsync(eventToUpdate, cancellationToken);
     }
 
-    public async Task DeleteEventAsync(int id)
+    public async Task DeleteEventAsync(int id, CancellationToken cancellationToken)
     {
-        var eventEntity = await _eventRepository.GetEventByIdAsync(id);
+        var eventEntity = await _eventRepository.GetEventByIdAsync(id, cancellationToken);
         if (eventEntity == null)
             throw new NotFoundException(nameof(eventEntity), id);
 
-        await _eventRepository.DeleteEventAsync(id);
+        await _eventRepository.DeleteEventAsync(id, cancellationToken);
     }
 
-    public async Task<EventsResponse> GetEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10)
+    public async Task<EventsResponse> GetEventsByCriteriaAsync(CancellationToken cancellationToken, DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10)
     {
-        var events = await _eventRepository.GetEventsByCriteriaAsync(date, location, category, pageNumber, pageSize);
-        int totalCount = 0;
-        if (date == null || location == null || category == null)
-            totalCount = await _eventRepository.GetNumberOfAllEventsByCriteriaAsync(date, location, category);
-        else totalCount = await _eventRepository.GetNumberOfAllEventsAsync();
-        return new EventsResponse { 
+        var events = await _eventRepository.GetEventsByCriteriaAsync(cancellationToken, date, location, category, pageNumber, pageSize);
+        int totalCount = await _eventRepository.GetNumberOfAllEventsByCriteriaAsync(cancellationToken, date, location, category);
+
+        return new EventsResponse
+        {
             Events = _mapper.Map<IEnumerable<EventResponse>>(events),
             TotalCount = totalCount
         };
     }
 
-    public async Task UpdateEventsImageAsync(UpdateEventImageRequest request)
+    public async Task UpdateEventsImageAsync(UpdateEventImageRequest request, CancellationToken cancellationToken)
     {
-        var eventEntity = await _eventRepository.GetEventByIdAsync(request.EventId);
+        var eventEntity = await _eventRepository.GetEventByIdAsync(request.EventId, cancellationToken);
         if (eventEntity == null)
             throw new NotFoundException(nameof(eventEntity), request.EventId);
 
-        await _eventRepository.AddEventImageAsync(request.EventId, request.ImageBytes);
+        await _eventRepository.AddEventImageAsync(request.EventId, request.ImageBytes, cancellationToken);
     }
 
-    public async Task<EventsResponse> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize)
+    public async Task<EventsResponse> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize, CancellationToken cancellationToken)
     {
         var userEntity = await _userManager.FindByIdAsync(userId);
         if (userEntity == null)
             throw new NotFoundException(nameof(userEntity), userId);
 
-        var events = await _eventRepository.GetEventsByUserIdAsync(userId, pageNumber, pageSize);
-        var totalCount = await _eventRepository.GetUserEventsCountAsync(userId);
+        var events = await _eventRepository.GetEventsByUserIdAsync(userId, pageNumber, pageSize, cancellationToken);
+        var totalCount = await _eventRepository.GetUserEventsCountAsync(userId, cancellationToken);
         return new EventsResponse
         {
             Events = _mapper.Map<IEnumerable<EventResponse>>(events),
