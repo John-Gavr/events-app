@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Azure;
 using Events.Application.DTOs.Events.Requests.CreateEvent;
 using Events.Application.DTOs.Events.Requests.UpdateEvent;
 using Events.Application.DTOs.Events.Requests.UpdateEventsImage;
@@ -8,6 +7,7 @@ using Events.Application.Interfaces;
 using Events.Core.Entities;
 using Events.Core.Entities.Exceptions;
 using Events.Core.Interfaces;
+using Microsoft.AspNetCore.Identity;
 
 namespace Events.Application.Services;
 
@@ -15,11 +15,13 @@ public class EventService : IEventService
 {
     private readonly IEventRepository _eventRepository;
     private readonly IMapper _mapper;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public EventService(IEventRepository eventRepository, IMapper mapper)
+    public EventService(IEventRepository eventRepository, IMapper mapper, UserManager<ApplicationUser> userManager)
     {
         _eventRepository = eventRepository;
         _mapper = mapper;
+        _userManager = userManager;
     }
 
     public async Task<EventsResponse> GetAllEventsAsync(int pageNumber, int pageSize)
@@ -53,8 +55,11 @@ public class EventService : IEventService
 
     public async Task AddEventAsync(CreateEventRequest request)
     {
+        var eventEntity = await _eventRepository.GetEventByNameAsync(request.Name);
+        if (eventEntity != null)
+            throw new EventAlredyExistException(request.Name);
+
         var newEvent = _mapper.Map<Event>(request);
-        
         await _eventRepository.AddEventAsync(newEvent);
     }
     public async Task UpdateEventAsync(int id, UpdateEventRequest request)
@@ -70,6 +75,10 @@ public class EventService : IEventService
 
     public async Task DeleteEventAsync(int id)
     {
+        var eventEntity = await _eventRepository.GetEventByIdAsync(id);
+        if (eventEntity == null)
+            throw new NotFoundException(nameof(eventEntity), id);
+
         await _eventRepository.DeleteEventAsync(id);
     }
 
@@ -88,11 +97,19 @@ public class EventService : IEventService
 
     public async Task UpdateEventsImageAsync(UpdateEventImageRequest request)
     {
+        var eventEntity = await _eventRepository.GetEventByIdAsync(request.EventId);
+        if (eventEntity == null)
+            throw new NotFoundException(nameof(eventEntity), request.EventId);
+
         await _eventRepository.AddEventImageAsync(request.EventId, request.ImageBytes);
     }
 
     public async Task<EventsResponse> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize)
     {
+        var userEntity = await _userManager.FindByIdAsync(userId);
+        if (userEntity == null)
+            throw new NotFoundException(nameof(userEntity), userId);
+
         var events = await _eventRepository.GetEventsByUserIdAsync(userId, pageNumber, pageSize);
         var totalCount = await _eventRepository.GetUserEventsCountAsync(userId);
         return new EventsResponse

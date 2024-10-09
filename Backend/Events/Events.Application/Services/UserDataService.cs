@@ -22,14 +22,14 @@ public class UserDataService : IUserDataService
 
     public async Task<UserDataResponse> GetUserDataByUserIdAsync(GetUserDataByUserIdRequest request)
     {
-        var user = await _userManager.Users
+        var userEntity = await _userManager.Users
             .FirstOrDefaultAsync(u => u.Id == request.UserId);
-        if (user == null)
-            throw new NotFoundException(nameof(user), request.UserId);
+        if (userEntity == null)
+            throw new NotFoundException(nameof(userEntity), request.UserId);
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await _userManager.GetRolesAsync(userEntity);
 
-        var userDataResponse = _mapper.Map<UserDataResponse>(user);
+        var userDataResponse = _mapper.Map<UserDataResponse>(userEntity);
         userDataResponse.Roles = roles.ToList();
 
         return userDataResponse;
@@ -37,15 +37,15 @@ public class UserDataService : IUserDataService
 
     public async Task<UserDataResponse> GetUserDataAsync(string userId)
     {
-        var user = await _userManager.Users
+        var userEntity = await _userManager.Users
             .Where(u => u.Id == userId)
             .FirstOrDefaultAsync();
-        if (user == null)
-            throw new NotFoundException(nameof(user), userId);
+        if (userEntity == null)
+            throw new NotFoundException(nameof(userEntity), userId);
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await _userManager.GetRolesAsync(userEntity);
 
-        var userDataResponse = _mapper.Map<UserDataResponse>(user);
+        var userDataResponse = _mapper.Map<UserDataResponse>(userEntity);
         userDataResponse.Roles = roles.ToList();
 
         return userDataResponse;
