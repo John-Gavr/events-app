@@ -13,11 +13,12 @@ public class EventRepository : IEventRepository
         _context = context;
     }
 
-    public async Task<int> GetNumberOfAllEventsAsync()
+    public async Task<int> GetNumberOfAllEventsAsync(CancellationToken cancellationToken)
     {
-        return await _context.Events.CountAsync();
+        return await _context.Events.CountAsync(cancellationToken);
     }
-    public async Task<int> GetNumberOfAllEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null)
+
+    public async Task<int> GetNumberOfAllEventsByCriteriaAsync(CancellationToken cancellationToken, DateTime? date = null, string? location = null, string? category = null)
     {
         var query = _context.Events.AsNoTracking().AsQueryable();
 
@@ -36,51 +37,53 @@ public class EventRepository : IEventRepository
             query = query.Where(e => e.Category == category);
         }
 
-        var result = query.Include(e => e.Participants);
-        return result.Count();
+        return await query.CountAsync(cancellationToken);
     }
-    public async Task<IEnumerable<Event>> GetAllEventsAsync(int pageNumber, int pageSize)
+
+    public async Task<IEnumerable<Event>> GetAllEventsAsync(int pageNumber, int pageSize, CancellationToken cancellationToken)
     {
         return await _context.Events.AsNoTracking()
                              .Include(e => e.Participants)
                              .Skip((pageNumber - 1) * pageSize)
                              .Take(pageSize)
-                             .ToListAsync();
+                             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Event?> GetEventByIdAsync(int id)
+    public async Task<Event?> GetEventByIdAsync(int id, CancellationToken cancellationToken)
     {
-        return await _context.Events.AsNoTracking().Include(e => e.Participants)
-                                    .FirstOrDefaultAsync(e => e.Id == id);
+        return await _context.Events.AsNoTracking()
+                                    .Include(e => e.Participants)
+                                    .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
-    public async Task<Event?> GetEventByNameAsync(string name)
+    public async Task<Event?> GetEventByNameAsync(string name, CancellationToken cancellationToken)
     {
-        return await _context.Events.AsNoTracking().Include(e => e.Participants)
-                                    .FirstOrDefaultAsync(e => e.Name == name);
+        return await _context.Events.AsNoTracking()
+                                    .Include(e => e.Participants)
+                                    .FirstOrDefaultAsync(e => e.Name == name, cancellationToken);
     }
 
-    public async Task AddEventAsync(Event newEvent)
+    public async Task AddEventAsync(Event newEvent, CancellationToken cancellationToken)
     {
-        await _context.Events.AddAsync(newEvent);
-        await _context.SaveChangesAsync();
+        await _context.Events.AddAsync(newEvent, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateEventAsync(Event updatedEvent)
+    public async Task UpdateEventAsync(Event updatedEvent, CancellationToken cancellationToken)
     {
         _context.Events.Update(updatedEvent);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteEventAsync(int id)
+    public async Task DeleteEventAsync(int id, CancellationToken cancellationToken)
     {
-        var eventToDelete = await _context.Events.FirstOrDefaultAsync(e => e.Id == id);
-        
+        var eventToDelete = await _context.Events.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+
         _context.Events.Remove(eventToDelete!);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Event>> GetEventsByCriteriaAsync(DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10)
+    public async Task<IEnumerable<Event>> GetEventsByCriteriaAsync(CancellationToken cancellationToken, DateTime? date = null, string? location = null, string? category = null, int pageNumber = 1, int pageSize = 10)
     {
         var query = _context.Events.AsNoTracking().AsQueryable();
 
@@ -102,30 +105,31 @@ public class EventRepository : IEventRepository
         return await query.Include(e => e.Participants)
                           .Skip((pageNumber - 1) * pageSize)
                           .Take(pageSize)
-                          .ToListAsync();
+                          .ToListAsync(cancellationToken);
     }
 
-    public async Task AddEventImageAsync(int id, byte[] image)
+    public async Task AddEventImageAsync(int id, byte[] image, CancellationToken cancellationToken)
     {
-        var eventToUpdate = await _context.Events.FindAsync(id);
+        var eventToUpdate = await _context.Events.FindAsync(new object[] { id }, cancellationToken);
 
         eventToUpdate!.Image = image;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Event>> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize)
+    public async Task<IEnumerable<Event>> GetEventsByUserIdAsync(string userId, int pageNumber, int pageSize, CancellationToken cancellationToken)
     {
         return await _context.Events.AsNoTracking()
             .Where(e => e.Participants.Any(p => p.UserId.ToString().Equals(userId)))
             .OrderBy(e => e.EventDateTime)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> GetUserEventsCountAsync(string userId)
+    public async Task<int> GetUserEventsCountAsync(string userId, CancellationToken cancellationToken)
     {
         return await _context.Events.AsNoTracking()
-            .Where(e => e.Participants.Any(p => p.UserId.ToString().Equals(userId))).CountAsync();
+            .Where(e => e.Participants.Any(p => p.UserId.ToString().Equals(userId)))
+            .CountAsync(cancellationToken);
     }
 }

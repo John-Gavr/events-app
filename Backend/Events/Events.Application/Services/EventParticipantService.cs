@@ -17,9 +17,10 @@ public class EventParticipantService : IEventParticipantService
     private readonly IEventRepository _eventRepository;
     private readonly IMapper _mapper;
     private readonly UserManager<ApplicationUser> _userManager;
-    public EventParticipantService(IEventParticipantRepository eventParticipantRepository, 
-        IEventRepository eventRepository, 
-        IMapper mapper, 
+
+    public EventParticipantService(IEventParticipantRepository eventParticipantRepository,
+        IEventRepository eventRepository,
+        IMapper mapper,
         UserManager<ApplicationUser> userManager)
     {
         _eventParticipantRepository = eventParticipantRepository;
@@ -28,7 +29,7 @@ public class EventParticipantService : IEventParticipantService
         _userManager = userManager;
     }
 
-    public async Task RegisterParticipantAsync(RegisterParticipantRequest request, string userId)
+    public async Task RegisterParticipantAsync(RegisterParticipantRequest request, string userId, CancellationToken cancellationToken)
     {
         var participant = _mapper.Map<EventParticipant>(request);
         participant.UserId = Guid.Parse(userId);
@@ -37,46 +38,46 @@ public class EventParticipantService : IEventParticipantService
         if (userEntity == null)
             throw new NotFoundException(nameof(userEntity), userId);
 
-        var eventEntity = await _eventRepository.GetEventByIdAsync(request.EventId);
-        if(eventEntity == null) 
+        var eventEntity = await _eventRepository.GetEventByIdAsync(request.EventId, cancellationToken);
+        if (eventEntity == null)
             throw new NotFoundException(nameof(eventEntity), request.EventId);
 
         if (eventEntity.Participants.Any(p => p.UserId.Equals(userId)))
             throw new ParticipationAlredyExistException(eventEntity.Id, userId);
 
-        await _eventParticipantRepository.RegisterParticipantAsync(request.EventId, participant);
+        await _eventParticipantRepository.RegisterParticipantAsync(request.EventId, participant, cancellationToken);
     }
 
-    public async Task<IEnumerable<EventParticipantResponse>> GetParticipantsByEventIdAsync(GetParticipantsByEventIdRequest request)
+    public async Task<IEnumerable<EventParticipantResponse>> GetParticipantsByEventIdAsync(GetParticipantsByEventIdRequest request, CancellationToken cancellationToken)
     {
-        var eventEntity = await _eventRepository.GetEventByIdAsync(request.EventId);
+        var eventEntity = await _eventRepository.GetEventByIdAsync(request.EventId, cancellationToken);
         if (eventEntity == null)
             throw new NotFoundException(nameof(eventEntity), request.EventId);
 
-        var participants = await _eventParticipantRepository.GetParticipantsByEventIdAsync(request.EventId, request.PageNumber, request.PageSize);
+        var participants = await _eventParticipantRepository.GetParticipantsByEventIdAsync(request.EventId, request.PageNumber, request.PageSize, cancellationToken);
         return _mapper.Map<IEnumerable<EventParticipantResponse>>(participants);
     }
 
-    public async Task<EventParticipantResponse?> GetParticipantByUserIdAsync(GetParticipantByUserIdRequest request)
+    public async Task<EventParticipantResponse?> GetParticipantByUserIdAsync(GetParticipantByUserIdRequest request, CancellationToken cancellationToken)
     {
         var userEntity = await _userManager.FindByIdAsync(request.UserId);
         if (userEntity == null)
             throw new NotFoundException(nameof(userEntity), request.UserId);
 
-        var participant = await _eventParticipantRepository.GetParticipantByUserIdAsync(request.UserId);
+        var participant = await _eventParticipantRepository.GetParticipantByUserIdAsync(request.UserId, cancellationToken);
         return _mapper.Map<EventParticipantResponse>(participant);
     }
 
-    public async Task UnregisterParticipantAsync(UnregisterParticipantRequest request, string userId)
+    public async Task UnregisterParticipantAsync(UnregisterParticipantRequest request, string userId, CancellationToken cancellationToken)
     {
         var userEntity = await _userManager.FindByIdAsync(userId);
         if (userEntity == null)
             throw new NotFoundException(nameof(userEntity), userId);
 
-        var participantEntity = await _eventParticipantRepository.GetParticipantByUserIdAsync(userId);
+        var participantEntity = await _eventParticipantRepository.GetParticipantByUserIdAsync(userId, cancellationToken);
         if (participantEntity == null)
             throw new NotFoundException(nameof(participantEntity), userId);
 
-        await _eventParticipantRepository.UnregisterParticipantAsync(request.EventId, userId);
+        await _eventParticipantRepository.UnregisterParticipantAsync(request.EventId, userId, cancellationToken);
     }
 }

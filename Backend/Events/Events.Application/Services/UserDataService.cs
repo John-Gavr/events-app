@@ -20,10 +20,10 @@ public class UserDataService : IUserDataService
         _mapper = mapper;
     }
 
-    public async Task<UserDataResponse> GetUserDataByUserIdAsync(GetUserDataByUserIdRequest request)
+    public async Task<UserDataResponse> GetUserDataByUserIdAsync(GetUserDataByUserIdRequest request, CancellationToken cancellationToken)
     {
         var userEntity = await _userManager.Users
-            .FirstOrDefaultAsync(u => u.Id == request.UserId);
+            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
         if (userEntity == null)
             throw new NotFoundException(nameof(userEntity), request.UserId);
 
@@ -35,11 +35,11 @@ public class UserDataService : IUserDataService
         return userDataResponse;
     }
 
-    public async Task<UserDataResponse> GetUserDataAsync(string userId)
+    public async Task<UserDataResponse> GetUserDataAsync(string userId, CancellationToken cancellationToken)
     {
         var userEntity = await _userManager.Users
             .Where(u => u.Id == userId)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
         if (userEntity == null)
             throw new NotFoundException(nameof(userEntity), userId);
 
