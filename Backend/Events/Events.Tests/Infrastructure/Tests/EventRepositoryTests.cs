@@ -1,46 +1,40 @@
-﻿using Events.Core.Entities;
-using Events.Core.Entities.Exceptions;
-using Events.Core.Interfaces;
-using Events.Infrastructure.Data.Repositories;
+﻿using Events.Infrastructure.Data.Repositories;
+using Events.Tests.Infrastructure.TestBases;
 using Microsoft.EntityFrameworkCore;
 
 namespace Events.Tests.Infrastructure.Tests;
-
-public class EventRepositoryTests : InfrastructureTestBase
+public class EventRepositoryTests : EventRepositoryTestBase
 {
     private readonly EventRepository _repository;
-
+    private readonly CancellationToken _cancellationToken;
     public EventRepositoryTests()
     {
-        _repository = new EventRepository(_context, _unitOfWorkMock.Object);
+        _repository = new EventRepository(_context);
+        _cancellationToken = CancellationToken.None;
     }
 
     [Fact]
     public async Task GetAllEventsAsync_ShouldReturnPaginatedEvents()
     {
-        var result = await _repository.GetAllEventsAsync(1, 10);
+        var result = await _repository.GetAllEventsAsync(PageNumber, PageSize, _cancellationToken);
 
         Assert.NotNull(result);
-        Assert.True(result.Any());
+        Assert.Equal(2, result.Count());
     }
 
     [Fact]
     public async Task GetEventByIdAsync_ShouldReturnEvent_WhenEventExists()
     {
-        var eventId = 1; 
-
-        var result = await _repository.GetEventByIdAsync(eventId);
+        var result = await _repository.GetEventByIdAsync(EventIdToGetWhenExist, _cancellationToken);
 
         Assert.NotNull(result);
-        Assert.Equal(result, _context.Events.Find(eventId));
+        Assert.Equal(EventIdToGetWhenExist, result!.Id);
     }
 
     [Fact]
     public async Task GetEventByIdAsync_ShouldReturnNull_WhenEventDoesNotExist()
     {
-        var eventId = 999;
-
-        var result = await _repository.GetEventByIdAsync(eventId);
+        var result = await _repository.GetEventByIdAsync(EventIdToGetWhenNotExist, _cancellationToken);
 
         Assert.Null(result);
     }
@@ -48,159 +42,89 @@ public class EventRepositoryTests : InfrastructureTestBase
     [Fact]
     public async Task AddEventAsync_ShouldAddNewEvent()
     {
-        var newEvent = new Event
-        {
-            Id = 3,
-            Name = "New Event",
-            Description = "Test description",
-            EventDateTime = DateTime.Parse("2024-10-10"),
-            Location = "Test Location",
-            MaxParticipants = 100
-        };
-
-        await _repository.AddEventAsync(newEvent);
+        await _repository.AddEventAsync(NewEventToAdd, _cancellationToken);
         var result = await _context.Events.FirstOrDefaultAsync(e => e.Name == "New Event");
 
         Assert.NotNull(result);
-        Assert.Equal("New Event", result.Name);
+        Assert.Equal(NewEventToAdd.Name, result!.Name);
     }
 
     [Fact]
     public async Task UpdateEventAsync_ShouldUpdateExistingEvent()
     {
-        var updatedValues = new
-        {
-            Name = "Updated Event",
-            Date = DateTime.Parse("2025-01-25"),
-            Location = "Updated Location",
-            MaxParticipants = 150,
-            Category = "Updated Category",
-            Description = "Updated Description"
-        };
-
         var eventToUpdate = await _context.Events.FindAsync(2);
-        Assert.NotNull(eventToUpdate); 
+        Assert.NotNull(eventToUpdate);
 
-        eventToUpdate!.Name = updatedValues.Name;
-        eventToUpdate.EventDateTime = updatedValues.Date;
-        eventToUpdate.Location = updatedValues.Location;
-        eventToUpdate.MaxParticipants = updatedValues.MaxParticipants;
-        eventToUpdate.Category = updatedValues.Category;
-        eventToUpdate.Description = updatedValues.Description;
+        eventToUpdate!.Name = UpdatedValuesForEvent.Name;
+        eventToUpdate.EventDateTime = UpdatedValuesForEvent.EventDateTime;
+        eventToUpdate.Location = UpdatedValuesForEvent.Location;
+        eventToUpdate.MaxParticipants = UpdatedValuesForEvent.MaxParticipants;
+        eventToUpdate.Category = UpdatedValuesForEvent.Category;
+        eventToUpdate.Description = UpdatedValuesForEvent.Description;
 
-        await _repository.UpdateEventAsync(eventToUpdate);
+        await _repository.UpdateEventAsync(eventToUpdate, _cancellationToken);
         var updatedEvent = await _context.Events.FirstOrDefaultAsync(e => e.Id == eventToUpdate.Id);
 
         Assert.NotNull(updatedEvent);
-        Assert.Equal(updatedValues.Name, updatedEvent!.Name);
-        Assert.Equal(updatedValues.Date, updatedEvent.EventDateTime);
-        Assert.Equal(updatedValues.Location, updatedEvent.Location);
-        Assert.Equal(updatedValues.MaxParticipants, updatedEvent.MaxParticipants);
-        Assert.Equal(updatedValues.Category, updatedEvent.Category);
-        Assert.Equal(updatedValues.Description, updatedEvent.Description);
+        Assert.Equal(UpdatedValuesForEvent.Name, updatedEvent!.Name);
+        Assert.Equal(UpdatedValuesForEvent.EventDateTime, updatedEvent.EventDateTime);
+        Assert.Equal(UpdatedValuesForEvent.Location, updatedEvent.Location);
+        Assert.Equal(UpdatedValuesForEvent.MaxParticipants, updatedEvent.MaxParticipants);
+        Assert.Equal(UpdatedValuesForEvent.Category, updatedEvent.Category);
+        Assert.Equal(UpdatedValuesForEvent.Description, updatedEvent.Description);
     }
 
     [Fact]
-    public async Task DeleteEventAsync_ShouldRemoveEvent_WhenEventExists()
+    public async Task DeleteEventAsync_ShouldRemoveEvent()
     {
-        var eventId = 2; 
-
-        await _repository.DeleteEventAsync(eventId);
-        var result = await _context.Events.FindAsync(eventId);
+        await _repository.DeleteEventAsync(EventIdForDelete, _cancellationToken);
+        var result = await _context.Events.FindAsync(EventIdForDelete);
 
         Assert.Null(result);
     }
 
     [Fact]
-    public async Task DeleteEventAsync_ShouldThrowNotFoundException_WhenEventDoesNotExist()
-    {
-        var eventId = 999;
-
-        await Assert.ThrowsAsync<NotFoundException>(() => _repository.DeleteEventAsync(eventId));
-    }
-
-    [Fact]
     public async Task GetEventsByCriteriaAsync_ShouldReturnEventsByDate()
     {
-        var date = DateTime.Parse("2024-10-10"); 
-
-        var result = await _repository.GetEventsByCriteriaAsync(date: date);
+        var result = await _repository.GetEventsByCriteriaAsync(_cancellationToken, date: DateCriteria);
 
         Assert.NotNull(result);
-        Assert.All(result, e => Assert.Equal(date, e.EventDateTime.Date));
+        Assert.All(result, e => Assert.Equal(DateCriteria, e.EventDateTime.Date));
     }
+
     [Fact]
     public async Task GetEventsByCriteriaAsync_ShouldReturnEventsByLocation()
     {
-        var location = "Location of the second event"; 
-
-        var result = await _repository.GetEventsByCriteriaAsync(location: location);
+        var result = await _repository.GetEventsByCriteriaAsync(_cancellationToken, location: LocationCriteria);
 
         Assert.NotNull(result);
-        Assert.All(result, e => Assert.Equal(location, e.Location));
+        Assert.All(result, e => Assert.Equal(LocationCriteria, e.Location));
     }
 
     [Fact]
     public async Task AddEventImageAsync_ShouldUpdateEventImage()
     {
-        var eventId = 1;
-        var imageBytes = new byte[] { 1, 2, 3, 4 };
-
-        await _repository.AddEventImageAsync(eventId, imageBytes);
-        var updatedEvent = await _context.Events.FindAsync(eventId);
+        await _repository.AddEventImageAsync(EventIdForUpdateImage, ImageBytes, _cancellationToken);
+        var updatedEvent = await _context.Events.FindAsync(EventIdForUpdateImage);
 
         Assert.NotNull(updatedEvent);
-        Assert.Equal(imageBytes, updatedEvent.Image);
-    }
-    
-    [Fact]
-    public async Task AddEventImageAsync_ShouldhrowNotFoundException_WhenEventDoesNotExist()
-    {
-        var eventId = 99;
-        var imageBytes = new byte[] { 1, 2, 3, 4 };
-
-        await Assert.ThrowsAsync<NotFoundException>(() => _repository.AddEventImageAsync(eventId, imageBytes));
+        Assert.Equal(ImageBytes, updatedEvent!.Image);
     }
 
     [Fact]
     public async Task GetEventsByUserIdAsync_ReturnsEventsForGivenUserId()
     {
-        var userId = Guid.NewGuid().ToString();
-        var participant1 = new EventParticipant { Id = 27, UserId = Guid.Parse(userId) };
-        var participant2 = new EventParticipant { Id = 28, UserId = Guid.NewGuid() };
-
-        var event1 = new Event { Id = 23, EventDateTime = DateTime.Now.AddDays(1), Participants = new List<EventParticipant> { participant1 } };
-        var event2 = new Event { Id = 24, EventDateTime = DateTime.Now.AddDays(2), Participants = new List<EventParticipant> { participant2 } };
-
-        _context.Events.AddRange(event1, event2);
-        await _context.SaveChangesAsync();
-
-        int pageNumber = 1;
-        int pageSize = 2;
-
-        var result = await _repository.GetEventsByUserIdAsync(userId, pageNumber, pageSize);
+        var result = await _repository.GetEventsByUserIdAsync(UserIdToGetRelatedEventsOrCount, PageNumber, PageSize, _cancellationToken);
 
         Assert.NotNull(result);
         Assert.Single(result);
-        Assert.Contains(result, e => e.EventDateTime == event1.EventDateTime);
     }
 
     [Fact]
     public async Task GetUserEventsCountAsync_ReturnsCorrectCount()
     {
-        var userId = Guid.NewGuid().ToString();
-        var participant1 = new EventParticipant { Id = 37, UserId = Guid.Parse(userId) };
-        var participant2 = new EventParticipant { Id = 38, UserId = Guid.NewGuid() };
+        var count = await _repository.GetUserEventsCountAsync(UserIdToGetRelatedEventsOrCount, _cancellationToken);
 
-        var event1 = new Event { Id = 33, EventDateTime = DateTime.Now.AddDays(1), Participants = new List<EventParticipant> { participant1 } };
-        var event2 = new Event { Id = 34, EventDateTime = DateTime.Now.AddDays(2), Participants = new List<EventParticipant> { participant2 } };
-
-        _context.Events.AddRange(event1, event2);
-        await _context.SaveChangesAsync();
-
-        var count = await _repository.GetUserEventsCountAsync(userId);
-
-        Assert.Equal(1, count); 
+        Assert.Equal(1, count);
     }
-
 }

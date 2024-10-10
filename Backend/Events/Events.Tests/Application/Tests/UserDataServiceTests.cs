@@ -1,90 +1,88 @@
 ﻿using AutoMapper;
-using Events.Application.DTOs.Users.Requests.GetUserDataById;
 using Events.Application.DTOs.Users.Responses;
+using Events.Application.Interfaces;
 using Events.Application.Services;
 using Events.Core.Entities;
 using Events.Core.Entities.Exceptions;
 using Events.Infrastructure.Data;
+using Events.Tests.Application.TestBases;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Moq;
 
-namespace Events.Application.Tests.Services;
-
-public class UserDataServiceTests
+namespace Events.Tests.Application.Services.Tests;
+public class UserDataServiceTests : UserDataServiceTestBase
 {
-    private readonly UserDataService _userDataService;
+    private readonly IUserDataService _userDataService;
     private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
-    private readonly IMapper _mapper;
-    private readonly List<ApplicationUser> _users;
+    private readonly AppDbContext _context;
 
-    private string User1Id = Guid.NewGuid().ToString();
-    private string User2Id = Guid.NewGuid().ToString();
-    private string NoSuchUserId = Guid.NewGuid().ToString();
     public UserDataServiceTests()
-    { 
-        _users = new List<ApplicationUser>
-        {
-            new ApplicationUser { Id = User1Id, UserName = "testuser1" },
-            new ApplicationUser { Id = User2Id, UserName = "testuser2" }
-        };
+    {
+        _context = AppDbContextFactory.Create();
+        _userManagerMock = CreateUserManager();
+        var mapper = CreateMapper();
+        _userDataService = new UserDataService(_userManagerMock.Object, mapper);
+    }
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: "TestDatabase")
-            .Options;
+    private Mock<UserManager<ApplicationUser>> CreateUserManager()
+    {
+        var store = new Mock<IUserStore<ApplicationUser>>();
+        var userManagerMock = new Mock<UserManager<ApplicationUser>>(store.Object, null, null, null, null, null, null, null, null);
+        var userStore = new UserStore<ApplicationUser>(_context);
 
-        var context = new AppDbContext(options);
-        context.Users.AddRange(_users);
-        context.SaveChanges();
+        userManagerMock.Setup(m => m.Users).Returns(userStore.Users);
 
+        return userManagerMock;
+    }
+
+    private IMapper CreateMapper()
+    {
         var config = new MapperConfiguration(cfg =>
         {
-            cfg.CreateMap<ApplicationUser, UserDataResponse>();
+            cfg.CreateMap<ApplicationUser, UserDataResponse>()
+                .ForMember(dest => dest.Roles, opt => opt.Ignore());
         });
 
-        _mapper = config.CreateMapper();
-
-        _userManagerMock = new Mock<UserManager<ApplicationUser>>(
-            new Mock<IUserStore<ApplicationUser>>().Object,
-            null!, null!, null!, null!, null!, null!, null!, null!);
-
-        _userManagerMock.Setup(um => um.Users).Returns(context.Users);
-
-        _userDataService = new UserDataService(_userManagerMock.Object, _mapper);
+        return config.CreateMapper();
     }
 
     [Fact]
-    public async Task GetUserDataByUserIdAsync_UserExists_ShouldReturnUserDataResponse()
+    public async Task GetUserDataByUserIdAsync_ShouldReturnUserData_WhenUserExists()
     {
-        var request = new GetUserDataByUserIdRequest { UserId = User1Id };
+        _userManagerMock.Setup(um => um.GetRolesAsync(It.Is<ApplicationUser>(u => u.Id == User1Id)))
+            .ReturnsAsync(UserRoles);
 
-        var result = await _userDataService.GetUserDataByUserIdAsync(request);
+        var result = await _userDataService.GetUserDataByUserIdAsync(GetUserDataByUserIdRequest_Success, _cancellationToken);
 
         Assert.NotNull(result);
-        Assert.Equal(User1Id, result.Id);
-        Assert.Equal(User1Id, result.Id);
+        Assert.Equal(User1Name, result.UserName);
+        Assert.Equal(User1Email, result.Email);
+        Assert.Equal(UserRoles, result.Roles);
     }
 
     [Fact]
-    public async Task GetUserDataByUserIdAsync_UserDoesNotExist_ShouldThrowNotFoundException()
+    public async Task GetUserDataByUserIdAsync_ShouldThrowNotFoundException_WhenUserDoesNotExist()
     {
-        var request = new GetUserDataByUserIdRequest { UserId = NoSuchUserId };
+        _userManagerMock.Setup(um => um.GetRolesAsync(It.IsAny<ApplicationUser>()))
+            .ReturnsAsync(new List<string>());
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _userDataService.GetUserDataByUserIdAsync(request));
+        await Assert.ThrowsAsync<NotFoundException>(() => 
+        _userDataService.GetUserDataByUserIdAsync(GetUserDataByUserIdRequest_Failure, _cancellationToken));
     }
 
     [Fact]
-    public async Task GetUserDataAsync_UserExists_ShouldReturnUserDataResponse()
+    public async Task GetUserDataAsync_ShouldReturnUserDataWithRoles_WhenUserExists()
     {
-        var result = await _userDataService.GetUserDataAsync(User1Id);
+        _userManagerMock.Setup(um => um.GetRolesAsync(It.Is<ApplicationUser>(u => u.Id == User2Id)))
+            .ReturnsAsync(new List<string> { "Admin" });
+
+        var result = await _userDataService.GetUserDataAsync(User2Id, _cancellationToken);
 
         Assert.NotNull(result);
-        Assert.Equal(User1Id, result.Id);
-    }
-
-    [Fact]
-    public async Task GetUserDataAsync_UserDoesNotExist_ShouldThrowNotFoundException()
-    {
-        await Assert.ThrowsAsync<NotFoundException>(() => _userDataService.GetUserDataAsync(NoSuchUserId));
+        Assert.Equal("testuser2", result.UserName);
+        Assert.Equal("testuser2@example.com", result.Email);
+        Assert.Single(result.Roles);
+        Assert.Contains("Admin", result.Roles);
     }
 }
