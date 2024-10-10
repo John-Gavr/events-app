@@ -35,7 +35,7 @@ public class EventParticipantRepository : IEventParticipantRepository
 
     public async Task<EventParticipant?> GetParticipantByUserIdAsync(string userId, CancellationToken cancellationToken)
     {
-        return await _context.EventParticipants.FirstOrDefaultAsync(p => p.UserId.ToString().Equals(userId), cancellationToken);
+        return await _context.EventParticipants.AsNoTracking().FirstOrDefaultAsync(p => p.UserId.ToString().Equals(userId), cancellationToken);
     }
 
     public async Task UnregisterParticipantAsync(int eventId, string userId, CancellationToken cancellationToken)
