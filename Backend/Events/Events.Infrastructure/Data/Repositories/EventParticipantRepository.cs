@@ -52,11 +52,15 @@ public class EventParticipantRepository : IEventParticipantRepository
 
     public async Task<EventParticipant?> GetParticipantByUserIdAsync(string userId)
     {
+<<<<<<< Updated upstream
         var participantEntity = await _context.EventParticipants.AsNoTracking().FirstOrDefaultAsync(p => p.UserId.ToString().Equals(userId));
         if(participantEntity == null)
             throw new NotFoundException(nameof(participantEntity), userId);
         
         return participantEntity;
+=======
+        return await _context.EventParticipants.AsNoTracking().FirstOrDefaultAsync(p => p.UserId.ToString().Equals(userId), cancellationToken);
+>>>>>>> Stashed changes
     }
 
     public async Task UnregisterParticipantAsync(int eventId, string userId)
