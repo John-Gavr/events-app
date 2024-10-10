@@ -1,130 +1,77 @@
-﻿using Events.Core.Entities;
-using Events.Core.Entities.Exceptions;
-using Events.Infrastructure.Data.Repositories;
+﻿using Events.Infrastructure.Data.Repositories;
 using Events.Tests.Infrastructure.Extensions;
+using Events.Tests.Infrastructure.TestBases;
 using Microsoft.EntityFrameworkCore;
 
 namespace Events.Tests.Infrastructure.Tests;
-
-public class EventParticipantRepositoryTests : InfrastructureTestBase
+public class EventParticipantRepositoryTests : EventParticipantRepositoryTestBase
 {
     private readonly EventParticipantRepository _repository;
     private readonly ParticipantRepositoryExtension _participantRepositoryExtension;
+    private readonly CancellationToken _cancellationToken;
 
-    public EventParticipantRepositoryTests() 
+    public EventParticipantRepositoryTests()
     {
-        _repository = new EventParticipantRepository(_context, _unitOfWorkMock.Object);
+        _repository = new EventParticipantRepository(_context);
         _participantRepositoryExtension = new ParticipantRepositoryExtension(_context);
+        _cancellationToken = CancellationToken.None;
     }
 
     [Fact]
     public async Task RegisterParticipantAsync_Success()
     {
-        int eventId = 2;
-        var participantEntity = new EventParticipant()
-        {
-            FirstName = "John",
-            LastName = "Brown",
-            DateOfBirth = DateTime.Parse("22-04-2001"),
-            RegistrationDate = DateTime.Now,
-            Email = "john@gmail.com",
-            UserId = Guid.NewGuid(),
-            EventId = eventId
-        };
-
-        await _repository.RegisterParticipantAsync(eventId, participantEntity);
+        await _repository.RegisterParticipantAsync(EventIdToRegisterParticipant, ParticipantEntityToRegister, _cancellationToken);
 
         var eventWithParticipants = await _context.Events
-                                              .Include(e => e.Participants)
-                                              .FirstOrDefaultAsync(e => e.Id == eventId);
+                                                  .Include(e => e.Participants)
+                                                  .FirstOrDefaultAsync(e => e.Id == EventIdToRegisterParticipant, _cancellationToken);
 
         Assert.NotNull(eventWithParticipants);
-
         Assert.Contains(eventWithParticipants.Participants, p =>
-            p.FirstName == participantEntity.FirstName &&
-            p.LastName == participantEntity.LastName &&
-            p.Email == participantEntity.Email &&
-            p.UserId == participantEntity.UserId &&
-            p.EventId == eventId);
+            p.FirstName == ParticipantEntityToRegister.FirstName &&
+            p.LastName == ParticipantEntityToRegister.LastName &&
+            p.Email == ParticipantEntityToRegister.Email &&
+            p.UserId == ParticipantEntityToRegister.UserId &&
+            p.EventId == EventIdToRegisterParticipant);
     }
 
     [Fact]
-    public async Task RegisterParticipantAsync_ShouldThrowNotFoundException_WhenEventNotFound()
+    public async Task GetParticipantsByEventIdAsync_ShouldReturnParticipants()
     {
-        int eventId = 999;
-        var participantEntity = new EventParticipant();
+        _participantRepositoryExtension.GetParticipantsToEventAsync(EventIdToGetParticipants);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _repository.RegisterParticipantAsync(eventId, participantEntity));
-    }
-
-    [Fact]
-    public async Task RegisterParticipantAsync_ShouldThrowInvalidOperationException_WhenMaxParticipantsReached()
-    {
-        _participantRepositoryExtension.GetParticipantsToEventAsync(1);
-
-        int eventId = 1;
-        var participantEntity = new EventParticipant()
-        {
-            FirstName = "John",
-            LastName = "Brown",
-            DateOfBirth = DateTime.Parse("22-04-2001"),
-            RegistrationDate = DateTime.Now,
-            Email = "john@gmail.com",
-            UserId = Guid.NewGuid(),
-            EventId = eventId
-        };
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _repository.RegisterParticipantAsync(eventId, participantEntity));
-    }
-
-    [Fact]
-    public async Task GetParticipantsByEventIdAsync_ShouldReturnParticipants_WhenEventExists()
-    {
-        _participantRepositoryExtension.GetParticipantsToEventAsync(1);
-
-        var result = await _repository.GetParticipantsByEventIdAsync(1, 1, 10);
+        var result = await _repository.GetParticipantsByEventIdAsync(EventIdToGetParticipants, 1, 10, _cancellationToken);
 
         Assert.Equal(5, result.Count());
     }
-    
-    [Fact]
-    public async Task GetParticipantsByEventIdAsync_ShouldReturnPaginatedEventParticipant_WhenEventExists()
-    {
-        _participantRepositoryExtension.GetParticipantsToEventAsync(1);
 
-        var result = await _repository.GetParticipantsByEventIdAsync(1, 1, 3);
+    [Fact]
+    public async Task GetParticipantsByEventIdAsync_ShouldReturnPaginatedEventParticipant()
+    {
+        _participantRepositoryExtension.GetParticipantsToEventAsync(EventIdToGetParticipants);
+
+        var result = await _repository.GetParticipantsByEventIdAsync(EventIdToGetParticipants, 1, 3, _cancellationToken);
 
         Assert.Equal(3, result.Count());
     }
-    
-    [Fact]
-    public async Task GetParticipantsByEventIdAsync_ShouldThrowInvalidOperationException_WhenEventNotFound()
-    {
-        int eventId = 99;
-
-        await Assert.ThrowsAsync<NotFoundException>(() => _repository.GetParticipantsByEventIdAsync(eventId, 1, 10));
-    }
 
     [Fact]
-    public async Task UnregisterParticipantAsync_ShouldThrowNotFoundException_WhenParticipantNotFound()
-    {
-        int eventId = 1;
+    public async Task GetParticipantByUserIdAsync_ShouldReturnParticipant()
+    {           
+        var result = await _repository.GetParticipantByUserIdAsync(UserIdToGetParticipant, _cancellationToken);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _repository.UnregisterParticipantAsync(eventId, Guid.NewGuid().ToString()));
-    }
-    [Fact]
-    public async Task UnregisterParticipantAsync_ShouldThrowNotFoundException_WhenEventNotFound()
-    {
-        int eventId = 99;
-
-        await Assert.ThrowsAsync<NotFoundException>(() => _repository.UnregisterParticipantAsync(eventId, Guid.NewGuid().ToString()));
+        Assert.NotNull(result);
+        Assert.Equal(UserIdToGetParticipant, result!.UserId.ToString());
     }
     [Fact]
     public async Task UnregisterParticipantAsync_Success()
     {
-        int eventId = 2;
-        string userId = "E435148A-5CD8-4513-BA51-2C8B4D091684";
+        await _repository.UnregisterParticipantAsync(EventIdToUnregisterUser, UserIdToUnregister, _cancellationToken);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _repository.UnregisterParticipantAsync(eventId, userId));
+        var eventEntity = await _context.Events.Include(e => e.Participants)
+                                               .FirstOrDefaultAsync(e => e.Id == EventIdToUnregisterUser, _cancellationToken);
+        var participantEntity = eventEntity!.Participants.FirstOrDefault(p => p.UserId.ToString().Equals(UserIdToUnregister));
+
+        Assert.Null(participantEntity);
     }
 }

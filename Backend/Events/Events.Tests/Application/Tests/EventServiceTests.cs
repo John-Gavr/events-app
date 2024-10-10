@@ -1,169 +1,148 @@
-﻿using AutoMapper;
-using Events.Application.DTOs.Events.Requests.CreateEvent;
-using Events.Application.DTOs.Events.Requests.UpdateEvent;
-using Events.Application.DTOs.Events.Requests.UpdateEventsImage;
+﻿using Events.Application.DTOs.Events.Requests.CreateEvent;
 using Events.Application.DTOs.Events.Responces;
 using Events.Application.Services;
 using Events.Core.Entities;
 using Events.Core.Entities.Exceptions;
 using Events.Core.Interfaces;
+using Events.Tests.Application.TestBases;
 using Moq;
 
-namespace Events.Tests.Application.Services;
-
-public class EventServiceTests : ApplicationTestBase
+namespace Events.Tests.Application.Services.Tests;
+public class EventServiceTests : EventServiceTestBase
 {
-    private readonly EventService _service;
-    protected readonly Mock<IMapper> _mapperMock;
-    private readonly Mock<IEventRepository> _eventRepositoryMock;
+    private readonly EventService _eventService;
 
-    public EventServiceTests() : base()
+    protected readonly Mock<IEventRepository> _eventRepositoryMock;
+    public EventServiceTests()
     {
-        _mapperMock = new Mock<IMapper>();
         _eventRepositoryMock = new Mock<IEventRepository>();
-        _service = new EventService(_eventRepositoryMock.Object, _mapperMock.Object);
+        _eventService = new EventService(
+            _eventRepositoryMock.Object,
+            _mapperMock.Object,
+            _userManagerMock.Object
+        );
     }
 
     [Fact]
-    public async Task GetAllEventsAsync_ShouldReturnMappedEvents()
+    public async Task GetAllEventsAsync_ShouldReturnEventsResponse()
     {
-        var events = new List<Event> { new Event { Id = 1, Name = "Event 1" } };
-        var mappedEvents = new List<EventResponse> { new EventResponse { Id = 1, Name = "Event 1" } };
+        _eventRepositoryMock.Setup(x => x.GetAllEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Event> { TestEvent });
+        _eventRepositoryMock.Setup(x => x.GetNumberOfAllEventsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+        _mapperMock.Setup(x => x.Map<IEnumerable<EventResponse>>(It.IsAny<IEnumerable<Event>>()))
+            .Returns(EventsResponse.Events);
 
-        _eventRepositoryMock.Setup(r => r.GetAllEventsAsync(1, 10)).ReturnsAsync(events);
-        _mapperMock.Setup(m => m.Map<IEnumerable<EventResponse>>(events)).Returns(mappedEvents);
-
-        var result = await _service.GetAllEventsAsync(1, 10);
+        var result = await _eventService.GetAllEventsAsync(1, 10, _cancellationToken);
 
         Assert.NotNull(result);
-        Assert.Equal(mappedEvents.Count, result.Events.Count());
-        _eventRepositoryMock.Verify(r => r.GetAllEventsAsync(1, 10), Times.Once);
+        Assert.Equal(EventsResponse.TotalCount, result.TotalCount);
+        Assert.Equal(EventsResponse.Events, result.Events);
     }
 
     [Fact]
-    public async Task GetEventByIdAsync_ShouldReturnMappedEvent_WhenEventExists()
+    public async Task GetEventByIdAsync_ShouldReturnEventResponse()
     {
-        var eventEntity = new Event { Id = 1, Name = "Event 1" };
-        var mappedEvent = new EventResponse { Id = 1, Name = "Event 1" };
+        _eventRepositoryMock.Setup(x => x.GetEventByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestEvent);
+        _mapperMock.Setup(x => x.Map<EventResponse>(It.IsAny<Event>()))
+            .Returns(EventsResponse.Events.First());
 
-        _eventRepositoryMock.Setup(r => r.GetEventByIdAsync(1)).ReturnsAsync(eventEntity);
-        _mapperMock.Setup(m => m.Map<EventResponse>(eventEntity)).Returns(mappedEvent);
-
-        var result = await _service.GetEventByIdAsync(1);
+        var result = await _eventService.GetEventByIdAsync(1, _cancellationToken);
 
         Assert.NotNull(result);
-        Assert.Equal(mappedEvent.Name, result.Name);
-        _eventRepositoryMock.Verify(r => r.GetEventByIdAsync(1), Times.Once);
+        Assert.Equal(EventsResponse.Events.First().Id, result.Id);
     }
 
     [Fact]
-    public async Task GetEventByIdAsync_ShouldThrowNotFoundException_WhenEventDoesNotExist()
+    public async Task GetEventByIdAsync_ShouldThrowNotFoundException_WhenEventNotFound()
     {
-        _eventRepositoryMock.Setup(r => r.GetEventByIdAsync(1)).ReturnsAsync((Event)null);
+        _eventRepositoryMock.Setup(x => x.GetEventByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Event)null);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _service.GetEventByIdAsync(1));
+        await Assert.ThrowsAsync<NotFoundException>(() => _eventService.GetEventByIdAsync(1, _cancellationToken));
     }
 
     [Fact]
-    public async Task AddEventAsync_ShouldCallRepositoryWithMappedEvent()
+    public async Task AddEventAsync_ShouldAddEvent()
     {
-        var request = new CreateEventRequest { Name = "New Event" };
-        var eventEntity = new Event { Name = "New Event" };
+        _eventRepositoryMock.Setup(x => x.GetEventByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Event)null);
 
-        _mapperMock.Setup(m => m.Map<Event>(request)).Returns(eventEntity);
+        _mapperMock.Setup(x => x.Map<Event>(It.IsAny<CreateEventRequest>()))
+            .Returns(TestEvent);
 
-        await _service.AddEventAsync(request);
+        await _eventService.AddEventAsync(CreateEventRequest, _cancellationToken);
 
-        _eventRepositoryMock.Verify(r => r.AddEventAsync(eventEntity), Times.Once);
+        _eventRepositoryMock.Verify(x => x.AddEventAsync(It.IsAny<Event>(), _cancellationToken), Times.Once);
     }
 
     [Fact]
-    public async Task UpdateEventAsync_ShouldUpdateEvent_WhenEventExists()
+    public async Task AddEventAsync_ShouldThrowEventAlredyExistException_WhenEventAlreadyExists()
     {
-        var request = new UpdateEventRequest { Name = "Updated Event" };
-        var eventEntity = new Event { Id = 1, Name = "Event 1" };
+        _eventRepositoryMock.Setup(x => x.GetEventByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestEvent);
 
-        _eventRepositoryMock.Setup(r => r.GetEventByIdAsync(1)).ReturnsAsync(eventEntity);
-
-        await _service.UpdateEventAsync(1, request);
-
-        _mapperMock.Verify(m => m.Map(request, eventEntity), Times.Once);
-        _eventRepositoryMock.Verify(r => r.UpdateEventAsync(eventEntity), Times.Once);
+        await Assert.ThrowsAsync<EventAlredyExistException>(() => _eventService.AddEventAsync(CreateEventRequest, _cancellationToken));
     }
 
     [Fact]
-    public async Task UpdateEventAsync_ShouldThrowNotFoundException_WhenEventDoesNotExist()
+    public async Task UpdateEventAsync_ShouldUpdateEvent()
     {
-        var request = new UpdateEventRequest { Name = "Updated Event" };
+        _eventRepositoryMock.Setup(x => x.GetEventByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestEvent);
 
-        _eventRepositoryMock.Setup(r => r.GetEventByIdAsync(1)).ReturnsAsync((Event)null!);
+        await _eventService.UpdateEventAsync(1, UpdateEventRequest, _cancellationToken);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => _service.UpdateEventAsync(1, request));
+        _eventRepositoryMock.Verify(x => x.UpdateEventAsync(It.IsAny<Event>(), _cancellationToken), Times.Once);
     }
 
     [Fact]
-    public async Task DeleteEventAsync_ShouldCallRepository()
+    public async Task UpdateEventAsync_ShouldThrowNotFoundException_WhenEventNotFound()
     {
-        var eventId = 1;
+        _eventRepositoryMock.Setup(x => x.GetEventByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Event)null);
 
-        await _service.DeleteEventAsync(eventId);
-
-        _eventRepositoryMock.Verify(r => r.DeleteEventAsync(eventId), Times.Once);
+        await Assert.ThrowsAsync<NotFoundException>(() => _eventService.UpdateEventAsync(1, UpdateEventRequest, _cancellationToken));
     }
 
     [Fact]
-    public async Task GetEventsByCriteriaAsync_ShouldReturnMappedEvents()
+    public async Task DeleteEventAsync_ShouldDeleteEvent()
     {
-        var events = new List<Event> { new Event { Id = 1, Name = "Event 1" } };
-        var mappedEvents = new List<EventResponse> { new EventResponse { Id = 1, Name = "Event 1" } };
+        _eventRepositoryMock.Setup(x => x.GetEventByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestEvent);
 
-        _eventRepositoryMock.Setup(r => r.GetEventsByCriteriaAsync(null, null, null, 1, 10)).ReturnsAsync(events);
-        _mapperMock.Setup(m => m.Map<IEnumerable<EventResponse>>(events)).Returns(mappedEvents);
+        await _eventService.DeleteEventAsync(1, _cancellationToken);
 
-        var result = await _service.GetEventsByCriteriaAsync(null, null, null, 1, 10);
-
-        Assert.NotNull(result);
-        Assert.Equal(mappedEvents.Count, result.Events.Count());
-        _eventRepositoryMock.Verify(r => r.GetEventsByCriteriaAsync(null, null, null, 1, 10), Times.Once);
+        _eventRepositoryMock.Verify(x => x.DeleteEventAsync(1, _cancellationToken), Times.Once);
     }
 
     [Fact]
-    public async Task UpdateEventsImageAsync_ShouldCallRepositoryWithCorrectParameters()
+    public async Task DeleteEventAsync_ShouldThrowNotFoundException_WhenEventNotFound()
     {
-        var request = new UpdateEventImageRequest { EventId = 1, ImageBytes = new byte[] { 0x01, 0x02 } };
+        _eventRepositoryMock.Setup(x => x.GetEventByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Event)null);
 
-        await _service.UpdateEventsImageAsync(request);
-
-        _eventRepositoryMock.Verify(r => r.AddEventImageAsync(request.EventId, request.ImageBytes), Times.Once);
+        await Assert.ThrowsAsync<NotFoundException>(() => _eventService.DeleteEventAsync(1, _cancellationToken));
     }
 
     [Fact]
-    public async Task GetEventsByUserIdAsync_ShouldReturnMappedEventsAndTotalCount()
+    public async Task UpdateEventsImageAsync_ShouldUpdateImage()
     {
-        var userId = Guid.NewGuid().ToString();
-        var events = new List<Event>
-        {
-            new Event { Id = 1, Name = "Event 1", EventDateTime = DateTime.Now.AddDays(1) },
-            new Event { Id = 2, Name = "Event 2", EventDateTime = DateTime.Now.AddDays(2) }
-        };
-        var mappedEvents = new List<EventResponse>
-        {
-            new EventResponse { Id = 1, Name = "Event 1" },
-            new EventResponse { Id = 2, Name = "Event 2" }
-        };
-        var totalCount = 2;
+        _eventRepositoryMock.Setup(x => x.GetEventByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestEvent);
 
-        _eventRepositoryMock.Setup(r => r.GetEventsByUserIdAsync(userId, 1, 10)).ReturnsAsync(events);
-        _eventRepositoryMock.Setup(r => r.GetUserEventsCountAsync(userId)).ReturnsAsync(totalCount);
-        _mapperMock.Setup(m => m.Map<IEnumerable<EventResponse>>(events)).Returns(mappedEvents);
+        await _eventService.UpdateEventsImageAsync(UpdateEventImageRequest, _cancellationToken);
 
-        var result = await _service.GetEventsByUserIdAsync(userId, 1, 10);
-
-        Assert.NotNull(result);
-        Assert.Equal(mappedEvents.Count, result.Events.Count());
-        Assert.Equal(totalCount, result.TotalCount);
-        _eventRepositoryMock.Verify(r => r.GetEventsByUserIdAsync(userId, 1, 10), Times.Once);
-        _eventRepositoryMock.Verify(r => r.GetUserEventsCountAsync(userId), Times.Once);
+        _eventRepositoryMock.Verify(x => x.AddEventImageAsync(It.IsAny<int>(), It.IsAny<byte[]>(), _cancellationToken), Times.Once);
     }
 
+    [Fact]
+    public async Task UpdateEventsImageAsync_ShouldThrowNotFoundException_WhenEventNotFound()
+    {
+        _eventRepositoryMock.Setup(x => x.GetEventByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Event)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _eventService.UpdateEventsImageAsync(UpdateEventImageRequest, _cancellationToken));
+    }
 }

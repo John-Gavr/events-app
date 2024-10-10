@@ -1,99 +1,140 @@
-﻿using AutoMapper;
-using Events.Application.DTOs.Participants.Requests.GetParticipantById;
+﻿using Events.Application.DTOs.Participants.Requests.GetParticipantById;
 using Events.Application.DTOs.Participants.Requests.GetParticipantsByEventId;
 using Events.Application.DTOs.Participants.Requests.RegisterParticipant;
 using Events.Application.DTOs.Participants.Requests.UnregisterParticipant;
 using Events.Application.DTOs.Participants.Responses;
 using Events.Application.Services;
 using Events.Core.Entities;
+using Events.Core.Entities.Exceptions;
 using Events.Core.Interfaces;
+using Events.Tests.Application.TestBases;
 using Moq;
 
-namespace Events.Tests.Application.Services;
+namespace Events.Tests.Application.Services.Tests;
 
-public class EventParticipantServiceTests : ApplicationTestBase
+public class EventParticipantServiceTests : EventParticipantServiceTestBase
 {
+    private readonly Mock<IEventParticipantRepository> _eventParticipantRepositoryMock;
+    private readonly Mock<IEventRepository> _eventRepositoryMock;
     private readonly EventParticipantService _service;
-    protected readonly Mock<IMapper> _mapperMock;
-    private readonly Mock<IEventParticipantRepository> _participantRepositoryMock;
 
     public EventParticipantServiceTests()
     {
-        _mapperMock = new Mock<IMapper>();
-        _participantRepositoryMock = new Mock<IEventParticipantRepository>();
-        _service = new EventParticipantService(_participantRepositoryMock.Object, _mapperMock.Object);
+        _eventParticipantRepositoryMock = new Mock<IEventParticipantRepository>();
+        _eventRepositoryMock = new Mock<IEventRepository>();
+
+
+        _service = new EventParticipantService(
+            _eventParticipantRepositoryMock.Object,
+            _eventRepositoryMock.Object,
+            _mapperMock.Object,
+            _userManagerMock.Object);
     }
 
     [Fact]
-    public async Task RegisterParticipantAsync_ShouldCallRepositoryWithMappedEntity()
+    public async Task RegisterParticipantAsync_ShouldRegisterParticipant_WhenValidRequest()
     {
-        var request = new RegisterParticipantRequest
-        {
-            EventId = 1,
-            FirstName = "John",
-            LastName = "Doe",
-            DateOfBirth = System.DateTime.Now,
-            Email = "john@example.com"
-        };
-        var participant = new EventParticipant { };
-        var userId = Guid.NewGuid().ToString();
+        _mapperMock.Setup(m => m.Map<EventParticipant>(RegisterParticipantRequest)).Returns(new EventParticipant());
+        _userManagerMock.Setup(u => u.FindByIdAsync(UserId)).ReturnsAsync(TestUser);
+        _eventRepositoryMock.Setup(e => e.GetEventByIdAsync(RegisterParticipantRequest.EventId, _cancellationToken)).ReturnsAsync(TestEvent);
+        _eventParticipantRepositoryMock.Setup(p => p.RegisterParticipantAsync(RegisterParticipantRequest.EventId, It.IsAny<EventParticipant>(), _cancellationToken)).Returns(Task.CompletedTask);
 
-        _mapperMock.Setup(m => m.Map<EventParticipant>(request)).Returns(participant);
+        await _service.RegisterParticipantAsync(RegisterParticipantRequest, UserId, _cancellationToken);
 
-        await _service.RegisterParticipantAsync(request, userId);
-
-        _participantRepositoryMock.Verify(r => r.RegisterParticipantAsync(request.EventId, participant), Times.Once);
-        Assert.Equal(Guid.Parse(userId), participant.UserId);
+        _eventParticipantRepositoryMock.Verify(p => p.RegisterParticipantAsync(RegisterParticipantRequest.EventId, It.IsAny<EventParticipant>(), _cancellationToken), Times.Once);
     }
 
     [Fact]
-    public async Task GetParticipantsByEventIdAsync_ShouldReturnMappedParticipants()
+    public async Task RegisterParticipantAsync_ShouldThrowNotFoundException_WhenUserNotFound()
     {
-        var request = new GetParticipantsByEventIdRequest { EventId = 1, PageNumber = 1, PageSize = 10 };
-        var participants = new List<EventParticipant> { };
-        var mappedParticipants = new List<EventParticipantResponse> { };
+        _mapperMock.Setup(m => m.Map<EventParticipant>(RegisterParticipantRequest)).Returns(new EventParticipant());
+        _userManagerMock.Setup(u => u.FindByIdAsync(UserId)).ReturnsAsync((ApplicationUser)null);
 
-        _participantRepositoryMock.Setup(r => r.GetParticipantsByEventIdAsync(request.EventId, request.PageNumber, request.PageSize))
-                                  .ReturnsAsync(participants);
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.RegisterParticipantAsync(RegisterParticipantRequest, UserId, _cancellationToken));
+    }
 
-        _mapperMock.Setup(m => m.Map<IEnumerable<EventParticipantResponse>>(participants))
-                   .Returns(mappedParticipants);
+    [Fact]
+    public async Task RegisterParticipantAsync_ShouldThrowNotFoundException_WhenEventNotFound()
+    {
+        _mapperMock.Setup(m => m.Map<EventParticipant>(RegisterParticipantRequest)).Returns(new EventParticipant());
+        _userManagerMock.Setup(u => u.FindByIdAsync(UserId)).ReturnsAsync(TestUser);
+        _eventRepositoryMock.Setup(e => e.GetEventByIdAsync(RegisterParticipantRequest.EventId, _cancellationToken)).ReturnsAsync((Event)null);
 
-        var result = await _service.GetParticipantsByEventIdAsync(request);
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.RegisterParticipantAsync(RegisterParticipantRequest, UserId, _cancellationToken));
+    }
+
+    [Fact]
+    public async Task GetParticipantsByEventIdAsync_ShouldReturnParticipants_WhenEventExists()
+    {
+        _eventRepositoryMock.Setup(e => e.GetEventByIdAsync(GetParticipantsByEventIdRequest.EventId, _cancellationToken)).ReturnsAsync(TestEvent);
+        _eventParticipantRepositoryMock.Setup(p => p.GetParticipantsByEventIdAsync(GetParticipantsByEventIdRequest.EventId,
+            GetParticipantsByEventIdRequest.PageNumber,
+            GetParticipantsByEventIdRequest.PageSize,
+            _cancellationToken)).ReturnsAsync(ParticipantsList);
+        _mapperMock.Setup(m => m.Map<IEnumerable<EventParticipantResponse>>(ParticipantsList)).Returns(new List<EventParticipantResponse>());
+
+        var result = await _service.GetParticipantsByEventIdAsync(GetParticipantsByEventIdRequest, _cancellationToken);
 
         Assert.NotNull(result);
-        Assert.Equal(mappedParticipants.Count(), result.Count());
-        _participantRepositoryMock.Verify(r => r.GetParticipantsByEventIdAsync(request.EventId, request.PageNumber, request.PageSize), Times.Once);
+        _mapperMock.Verify(m => m.Map<IEnumerable<EventParticipantResponse>>(ParticipantsList), Times.Once);
     }
 
     [Fact]
-    public async Task GetParticipantByUserIdAsync_ShouldReturnMappedParticipant()
+    public async Task GetParticipantsByEventIdAsync_ShouldThrowNotFoundException_WhenEventDoesNotExist()
     {
-        var request = new GetParticipantByUserIdRequest { UserId = Guid.NewGuid().ToString() };
-        var participant = new EventParticipant { };
-        var mappedParticipant = new EventParticipantResponse { };
+        _eventRepositoryMock.Setup(e =>
+        e.GetEventByIdAsync(GetParticipantsByEventIdRequest.EventId, _cancellationToken)).ReturnsAsync((Event)null);
 
-        _participantRepositoryMock.Setup(r => r.GetParticipantByUserIdAsync(request.UserId))
-                                  .ReturnsAsync(participant);
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.GetParticipantsByEventIdAsync(GetParticipantsByEventIdRequest,
+            _cancellationToken));
+    }
 
-        _mapperMock.Setup(m => m.Map<EventParticipantResponse>(participant))
-                   .Returns(mappedParticipant);
+    [Fact]
+    public async Task GetParticipantByUserIdAsync_ShouldReturnParticipant_WhenUserAndParticipantExist()
+    {
+        _userManagerMock.Setup(u => u.FindByIdAsync(GetParticipantByUserIdRequest.UserId)).ReturnsAsync(TestUser);
+        _eventParticipantRepositoryMock.Setup(p => p.GetParticipantByUserIdAsync(GetParticipantByUserIdRequest.UserId, _cancellationToken)).ReturnsAsync(TestParticipant);
+        _mapperMock.Setup(m => m.Map<EventParticipantResponse>(TestParticipant)).Returns(new EventParticipantResponse());
 
-        var result = await _service.GetParticipantByUserIdAsync(request);
+        var result = await _service.GetParticipantByUserIdAsync(GetParticipantByUserIdRequest, _cancellationToken);
 
         Assert.NotNull(result);
-        Assert.Equal(mappedParticipant.FirstName, result.FirstName);
-        _participantRepositoryMock.Verify(r => r.GetParticipantByUserIdAsync(request.UserId), Times.Once);
+        _mapperMock.Verify(m => m.Map<EventParticipantResponse>(TestParticipant), Times.Once);
     }
 
     [Fact]
-    public async Task UnregisterParticipantAsync_ShouldCallRepositoryWithCorrectParameters()
+    public async Task GetParticipantByUserIdAsync_ShouldThrowNotFoundException_WhenUserNotFound()
     {
-        var request = new UnregisterParticipantRequest { EventId = 1 };
-        var userId = Guid.NewGuid().ToString();
+        _userManagerMock.Setup(u => u.FindByIdAsync(GetParticipantByUserIdRequest.UserId)).ReturnsAsync((ApplicationUser)null);
 
-        await _service.UnregisterParticipantAsync(request, userId);
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.GetParticipantByUserIdAsync(GetParticipantByUserIdRequest, _cancellationToken));
+    }
 
-        _participantRepositoryMock.Verify(r => r.UnregisterParticipantAsync(request.EventId, userId), Times.Once);
+    [Fact]
+    public async Task UnregisterParticipantAsync_ShouldUnregisterParticipant_WhenValidRequest()
+    {
+        _userManagerMock.Setup(u => u.FindByIdAsync(UserId)).ReturnsAsync(TestUser);
+        _eventParticipantRepositoryMock.Setup(p => p.GetParticipantByUserIdAsync(UserId, _cancellationToken)).ReturnsAsync(TestParticipant);
+
+        await _service.UnregisterParticipantAsync(UnregisterParticipantRequest, UserId, _cancellationToken);
+
+        _eventParticipantRepositoryMock.Verify(p => p.UnregisterParticipantAsync(UnregisterParticipantRequest.EventId, UserId, _cancellationToken), Times.Once);
+    }
+
+    [Fact]
+    public async Task UnregisterParticipantAsync_ShouldThrowNotFoundException_WhenUserNotFound()
+    {
+        _userManagerMock.Setup(u => u.FindByIdAsync(UserId)).ReturnsAsync((ApplicationUser)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.UnregisterParticipantAsync(UnregisterParticipantRequest, UserId, _cancellationToken));
+    }
+
+    [Fact]
+    public async Task UnregisterParticipantAsync_ShouldThrowNotFoundException_WhenParticipantNotFound()
+    {
+        _userManagerMock.Setup(u => u.FindByIdAsync(UserId)).ReturnsAsync(TestUser);
+        _eventParticipantRepositoryMock.Setup(p => p.GetParticipantByUserIdAsync(UserId, _cancellationToken)).ReturnsAsync((EventParticipant)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.UnregisterParticipantAsync(UnregisterParticipantRequest, UserId, _cancellationToken));
     }
 }
