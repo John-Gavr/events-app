@@ -1,7 +1,5 @@
-﻿using Events.Application.DTOs.Events.Requests.GetAllEvents;
-using Events.Application.Interfaces;
+﻿using Events.Application.Interfaces;
 using Events.Application.Mapping;
-using Events.Application.Services;
 using Events.Application.Validation;
 using Events.Core.Entities;
 using Events.Core.Interfaces;
@@ -10,6 +8,8 @@ using Events.Infrastructure.Data;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Events.Application.UseCases.Events.Queries.GetAllEvents;
+using Events.Application.UseCases.Events.Commands.CreateEvent;
 public static class Startup
 {
     public static void ConfigureServices(WebApplicationBuilder builder)
@@ -50,16 +50,14 @@ public static class Startup
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IEventParticipantRepository, EventParticipantRepository>();
-        services.AddScoped<IEventService, EventService>();
-        services.AddScoped<IEventParticipantService, EventParticipantService>();
-        services.AddScoped<IRolesService, RolesService>();
-        services.AddScoped<IUserDataService, UserDataService>();
 
         services.AddSingleton<IGuidValidator, GuidValidator>();
 
         services.AddFluentValidationAutoValidation();
         services.AddFluentValidationClientsideAdapters();
-        services.AddValidatorsFromAssemblyContaining<GetAllEventsRequestValidator>();
+        services.AddValidatorsFromAssemblyContaining<GetAllEventsQueryValidator>();
+
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateEventCommand).Assembly));
 
         services.AddControllers();
         services.AddEndpointsApiExplorer();
