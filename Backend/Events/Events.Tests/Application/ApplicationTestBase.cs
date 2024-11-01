@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Events.Application.DTOs.Participants.Responses;
+using Events.Application.UseCases.Participants.DTOs;
 using Events.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Moq;
@@ -17,11 +17,11 @@ public class ApplicationTestBase
         _userManagerMock = new Mock<UserManager<ApplicationUser>>(userStoreMock.Object, null, null, null, null, null, null, null, null);
     }
 
-    protected static readonly string UserId = Guid.NewGuid().ToString();
-    protected static readonly ApplicationUser TestUser = new ApplicationUser { Id = UserId };
+    protected static readonly string userId = Guid.NewGuid().ToString();
+    protected static readonly ApplicationUser testUser = new ApplicationUser { Id = userId };
     protected static readonly List<EventParticipant> ParticipantsList = new List<EventParticipant>();
-    protected static readonly IEnumerable<EventParticipantResponse> ParticipantResponses = new List<EventParticipantResponse>();
-    protected static readonly Event TestEvent = new Event 
+    protected static readonly IEnumerable<EventParticipantResponseDTO> ParticipantResponses = new List<EventParticipantResponseDTO>();
+    protected static readonly Event testEvent = new Event 
     { 
         Id = 1,
         Name = "Test Event",
@@ -32,7 +32,7 @@ public class ApplicationTestBase
     protected static readonly string RoleName = "Admin";
     protected static readonly ApplicationRole TestRole = new ApplicationRole { Name = RoleName };
     protected static readonly List<ApplicationRole> RolesList = new List<ApplicationRole> { TestRole };
-    protected static readonly List<string> UserRoles = new List<string> 
+    protected static readonly List<string> userRoles = new List<string> 
     { 
         "Admin", 
         "User" 

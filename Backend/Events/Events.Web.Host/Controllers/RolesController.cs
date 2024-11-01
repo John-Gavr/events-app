@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Events.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Events.Application.DTOs.Roles.Requests;
-using System.Threading;
+using Events.Application.UseCases.Roles.Queries.GetUserRoles;
+using Events.Application.UseCases.Roles.Commands.SetUsersRoles;
+using MediatR;
+using Events.Application.UseCases.Roles.Queries.GetAllRoles;
 
 namespace Events.Web.Host.Controllers;
 
@@ -10,34 +11,33 @@ namespace Events.Web.Host.Controllers;
 [Route("api/[controller]")]
 public class RolesController : ControllerBase
 {
-    private readonly IRolesService _rolesService;
-
-    public RolesController(IRolesService rolesService)
+    private readonly IMediator _mediator;
+    public RolesController(IMediator mediator)
     {
-        _rolesService = rolesService;
+        _mediator = mediator;
     }
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public IActionResult GetAllRoles(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAllRolesAsync(CancellationToken cancellationToken)
     {
-        var roles = _rolesService.GetAllRoles(cancellationToken);
+        var roles = await _mediator.Send(new GetAllRolesQuery(), cancellationToken);
         return Ok(roles);
     }
 
     [HttpGet("users/user/roles")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetUserRolesAsync([FromQuery] GetUserRolesRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetUserRolesAsync([FromQuery] GetUserRolesQuery request, CancellationToken cancellationToken)
     {
-        var roles = await _rolesService.GetUsersRoleAsync(request, cancellationToken);
+        var roles = await _mediator.Send(request, cancellationToken);
         return Ok(roles);
     }
 
     [HttpPost("users/user/roles")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> SetUserRoleAsync(SetUsersRolesRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SetUserRoleAsync(SetUsersRolesCommand request, CancellationToken cancellationToken)
     {
-        await _rolesService.SetUsersRoleAsync(request, cancellationToken);
+        await _mediator.Send(request, cancellationToken);
         return Ok(new { Message = "Role assigned successfully." });
     }
 }

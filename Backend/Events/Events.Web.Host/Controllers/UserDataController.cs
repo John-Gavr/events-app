@@ -1,9 +1,10 @@
-﻿using Events.Application.DTOs.Users.Requests.GetUserDataById;
-using Events.Application.DTOs.Users.Responses;
-using Events.Application.Interfaces;
+﻿using Events.Application.Interfaces;
+using Events.Application.UseCases.Users.Queries.GetUserDataById;
+using Events.Application.UseCases.Users.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using MediatR;
 
 namespace Events.Web.Host.Controllers;
 
@@ -11,21 +12,21 @@ namespace Events.Web.Host.Controllers;
 [Route("api/[controller]")]
 public class UserDataController : ControllerBase
 {
-    private readonly IUserDataService _userDataService;
+    private readonly IMediator _mediator;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UserDataController(IUserDataService userDataService, IHttpContextAccessor httpContextAccessor)
+    public UserDataController(IHttpContextAccessor httpContextAccessor, IMediator mediator)
     {
-        _userDataService = userDataService;
         _httpContextAccessor = httpContextAccessor;
+        _mediator = mediator;
     }
 
     [HttpGet("Id")]
     [Authorize]
-    public UserIdResponse GetUserId()
+    public UserIdResponseDTO GetUserId()
     {
         var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return new UserIdResponse
+        return new UserIdResponseDTO
         {
             Id = userId!
         };
@@ -33,17 +34,20 @@ public class UserDataController : ControllerBase
 
     [HttpGet("byId")]
     [Authorize(Roles = "Admin")]
-    public async Task<UserDataResponse> GetUserDataByUserIdAsync([FromQuery] GetUserDataByUserIdRequest request, CancellationToken cancellationToken)
+    public async Task<UserDataResponseDTO> GetUserDataByUserIdAsync([FromQuery] GetUserDataByUserIdQuery request, CancellationToken cancellationToken)
     {
         var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _userDataService.GetUserDataByUserIdAsync(request, cancellationToken);
+        return await _mediator.Send(request, cancellationToken);
     }
 
     [HttpGet]
     [Authorize]
-    public async Task<UserDataResponse> GetUserDataAsync(CancellationToken cancellationToken)
+    public async Task<UserDataResponseDTO> GetUserDataAsync(CancellationToken cancellationToken)
     {
         var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _userDataService.GetUserDataAsync(userId, cancellationToken);
+        return await _mediator.Send(new GetUserDataByUserIdQuery
+        {
+            UserId = userId!
+        }, cancellationToken);
     }
 }

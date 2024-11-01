@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
-using Events.Application.DTOs.Events.Requests.CreateEvent;
-using Events.Application.DTOs.Events.Requests.UpdateEvent;
-using Events.Application.DTOs.Events.Responces;
-using Events.Application.DTOs.Participants.Requests.RegisterParticipant;
-using Events.Application.DTOs.Participants.Responses;
-using Events.Application.DTOs.Roles.Responses;
-using Events.Application.DTOs.Users.Responses;
+using Events.Application.UseCases.Events.Commands.CreateEvent;
+using Events.Application.UseCases.Events.Commands.UpdateEvent;
+using Events.Application.UseCases.Events.DTOs;
+using Events.Application.UseCases.Participants.Commands.RegisterParticipant;
+using Events.Application.UseCases.Participants.DTOs;
+using Events.Application.UseCases.Roles.DTOs;
+using Events.Application.UseCases.Users.DTOs;
 using Events.Core.Entities;
 
 namespace Events.Application.Mapping
@@ -14,18 +14,18 @@ namespace Events.Application.Mapping
     {
         public MappingProfile()
         {
-            CreateMap<Event, EventResponse>();
-            CreateMap<EventResponse, Event>();
-            CreateMap<CreateEventRequest, Event>()
+            CreateMap<Event, EventResponseDTO>();
+            CreateMap<EventResponseDTO, Event>();
+            CreateMap<CreateEventCommand, Event>()
                 .ForMember(dest => dest.Image, opt => opt.ConvertUsing(new Base64ToByteArrayConverter(), src => src.Image));          ;
-            CreateMap<UpdateEventRequest, Event>();
-            CreateMap<RegisterParticipantRequest, EventParticipant>();
-            CreateMap<EventParticipantResponse, EventParticipant>();
-            CreateMap<EventParticipant, EventParticipantResponse>();
-            CreateMap<ApplicationRole, RoleResponse>()
+            CreateMap<UpdateEventCommand, Event>();
+            CreateMap<RegisterParticipantCommand, EventParticipant>();
+            CreateMap<EventParticipantResponseDTO, EventParticipant>();
+            CreateMap<EventParticipant, EventParticipantResponseDTO>();
+            CreateMap<ApplicationRole, RoleNameResponseDTO>()
                 .ForMember(dest => dest.RoleId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Name));
-            CreateMap<ApplicationUser, UserDataResponse>();
+            CreateMap<ApplicationUser, UserDataResponseDTO>();
         }
     }
 }
